@@ -28,7 +28,7 @@ class bslcp():
             self.setvalue = 2
 
         # load info file
-        self.info_file = f'data/info/bslcp/info.pkl'
+        self.info_file = f'../data/info/bslcp/info.pkl'
         with open(self.info_file, 'rb') as f:
             self.info_data = pickle.load(f)
 
