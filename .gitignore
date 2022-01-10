@@ -3,6 +3,7 @@
 *.jpg
 *.pkl
 *.model
+*.tar
 run/
 __pycache__/
 *.py[cod]
@@ -12,6 +13,7 @@ __pycache__/
 .DS_Store
 ._*
 .vscode/
+data/*
 
 
 !demo/sample_data/demo_video.mp4

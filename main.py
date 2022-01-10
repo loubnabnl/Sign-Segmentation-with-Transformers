@@ -81,7 +81,6 @@ def main(args, device, model_load_dir, model_save_dir, results_save_dir):
         
         print('Self labelling process finished')
 
-
     else:
         print(f'Load test data: {args.test_data}')
         test_loader = DataLoader(args, args.test_data, args.extract_set, results_dir=results_save_dir)
