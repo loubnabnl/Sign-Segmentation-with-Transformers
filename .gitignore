@@ -15,6 +15,7 @@ __pycache__/
 .vscode/
 data/*
 tests/exps/*
+test_new_model/test/*
 
 !demo/sample_data/demo_video.mp4
 !demo/results/demo.mp4
