@@ -15,7 +15,7 @@ class DataLoader():
 
         self.CP_dict = None
 
-        self.feature_path = f'../data/features/{self.dataset}/{args.i3d_training}'
+        self.feature_path = f'data/features/{self.dataset}/{args.i3d_training}'
 
         self.get_data(args)
 
@@ -28,7 +28,7 @@ class DataLoader():
             self.CP_dict = feature_loader.CP_dict
 
         if self.dataset == 'phoenix14' and args.use_test and args.extract_save_pseudo_labels and (args.pseudo_label_type == 'PL' or args.pseudo_label_type == 'CP'):
-            self.feature_path_test = f'../data/features/{self.dataset}/{args.i3d_training}'
+            self.feature_path_test = f'data/features/{self.dataset}/{args.i3d_training}'
             feature_loader_test = dataloader(args, self.feature_path_test, 'test', self.results_dir)
             feature_loader.features_dict.update(feature_loader_test.features_dict)
             feature_loader.eval_gt_dict.update(feature_loader_test.eval_gt_dict)

@@ -28,7 +28,7 @@ class bslcp():
             self.setvalue = 2
 
         # load info file
-        self.info_file = f'../data/info/bslcp/info.pkl'
+        self.info_file = f'data/info/bslcp/info.pkl'
         with open(self.info_file, 'rb') as f:
             self.info_data = pickle.load(f)
 
@@ -112,5 +112,5 @@ class bslcp():
         if args.action == 'predict' and args.test_subset != -1:
             self.vid_list = random.choices(self.vid_list, k=args.test_subset)
 
-        if args.eval_use_CP:
-            self.CP_dict = get_CP_dict(self.test_features_dict, self.test_vid_list, self.test_gt_dict)
+        #if args.eval_use_CP:
+        #    self.CP_dict = get_CP_dict(self.test_features_dict, self.test_vid_list, self.test_gt_dict)

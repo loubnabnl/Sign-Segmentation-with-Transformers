@@ -184,6 +184,7 @@ def create_folders(args):
     else:
         norm_str = ''
 
+    ssl_str = 'supervised'
     if args.use_pseudo_labels:
         if train_data == 'phoenix14':
             ssl_str = f"pseudo_labels/{args.pseudo_label_type}/train1_test{args.use_test}"
