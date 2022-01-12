@@ -190,7 +190,13 @@ class TransfromerTrainer:
                 )
                 count += 1
                 bar.next()
-                print('batch ok !')
+                print("({batch}/{size}) Batch: {bt:.1f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:}".format(
+                    batch=count + 1,
+                    size=batch_gen.get_max_index() / batch_size,
+                    bt=batch_time.avg,
+                    total=bar.elapsed_td,
+                    eta=datetime.timedelta(seconds=ceil((bar.eta_td/batch_size).total_seconds())),
+                    loss=loss.item()))
 
             print('epoch ok')
             batch_gen.reset()
@@ -203,13 +209,13 @@ class TransfromerTrainer:
 
             eval_args[7] = epoch
             eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
-            self.predict(*eval_args)
+            #self.predict(*eval_args)
 
-        with open(f'{save_dir}/train_results.json', 'w') as fp:
-            json.dump(self.train_result_dict, fp, indent=4)
-        with open(f'{save_dir}/eval_results.json', 'w') as fp:
-            json.dump(self.test_result_dict, fp, indent=4)
-        self.writer.close()
+        #with open(f'{save_dir}/train_results.json', 'w') as fp:
+        #    json.dump(self.train_result_dict, fp, indent=4)
+        #with open(f'{save_dir}/eval_results.json', 'w') as fp:
+        #    json.dump(self.test_result_dict, fp, indent=4)
+        #self.writer.close()
 
     #### TODO :  ADAPT PREDICT FROM model.py : 
     def predict(): 
