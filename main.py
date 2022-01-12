@@ -63,7 +63,24 @@ def main(args, device, model_load_dir, model_save_dir, results_save_dir):
             device,
             eval_args,
             pretrained=model_load_dir)
-            
+
+    # elif args.extract_save_pseudo_labels and args.pseudo_label_type != 'PL':
+    #     # extract/ generate pseudo labels and save in "data/pseudo_labels"
+    #     print(f'Load test data: {args.test_data}')
+    #     test_loader = DataLoader(args, args.test_data, args.extract_set, results_dir=results_save_dir)
+    #     print(f'Extract {args.pseudo_label_type}')
+        
+    #     if args.pseudo_label_type == 'local':
+    #         get_save_local_fusion(args, test_loader.features_dict, test_loader.gt_dict)
+    #     elif args.pseudo_label_type == 'merge':
+    #         merge_PL_CP(args, test_loader.features_dict, test_loader.gt_dict)
+    #     elif args.pseudo_label_type == 'CMPL':
+    #         CMPL(args, test_loader.features_dict, test_loader.gt_dict)
+    #     elif args.pseudo_label_type == 'CP':
+    #         extract_CP(args, test_loader.features_dict)
+        
+    #     print('Self labelling process finished')
+
     else:
         print(f'Load test data: {args.test_data}')
         test_loader = DataLoader(args, args.test_data, args.extract_set, results_dir=results_save_dir)
