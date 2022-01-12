@@ -55,12 +55,12 @@ class TransformerModel(nn.Module):
         initrange = 0.1
         ##self.encoder.weight.data.uniform_(-initrange, initrange)
 
-    def forward(self, src, src_mask):
+    def forward(self, src, src_mask, src_key_padding_mask):
         ## !! to do : padding mask 
 
         ##src = self.encoder(src) * math.sqrt(self.nhid) 
-        src = self.pos_encoder(src)
-        output = self.transformer_encoder(src, src_mask)
+        src = self.pos_encoder(src * math.sqrt(self.nhid))
+        output = self.transformer_encoder(src, src_mask, src_key_padding_mask)
         return output
 
 
@@ -89,10 +89,10 @@ class TransformerClassifier(nn.Module):
         ## !!!! TO ADD : src_key_paddins_mask in transformer !! 
 
         # base model
-        x = self.base(src, src_mask)
+        x = self.base(src, src_mask, src_key_padding_mask)
         # classifier model
         output = self.classifier(x)
-        return output * src_key_padding_mask
+        return output
 
 class PositionalEncoding(nn.Module):
     def __init__(self, nhid, dropout=0.1, max_len=5000):
@@ -157,9 +157,11 @@ class TransfromerTrainer:
                 self.global_counter += 1
                 batch_input, batch_target, batch_target_eval, padding_mask = batch_gen.next_batch(batch_size)
                 batch_input, batch_target, batch_target_eval, padding_mask = batch_input.permute(2, 0, 1).to(device), batch_target.permute(1,0).to(device), batch_target_eval.permute(1,0).to(device),  padding_mask.permute(2, 0, 1).to(device)
-                src_mask = self.model.base.generate_square_subsequent_mask(batch_input.size(0)).to(device) ## to change...
+                #src_mask = self.model.base.generate_square_subsequent_mask(batch_input.size(0)).to(device) ## to change...
+                src_mask = None
                 optimizer.zero_grad()
-                predictions = self.model(batch_input, src_mask, padding_mask)
+                key_padding_mask = (padding_mask[:,:,0:1]< 1).squeeze(2).permute(1,0)
+                predictions = self.model(batch_input, src_mask, key_padding_mask)
 
                 loss = 0
                 # loss for each stage !
@@ -190,8 +192,9 @@ class TransfromerTrainer:
                 )
                 count += 1
                 bar.next()
-                print('batch ok !')
-
+                #print('batch ok !')
+                if count % 50 == 0:
+                    print(bar.suffix)
             print('epoch ok')
             batch_gen.reset()
             torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".model")
@@ -201,14 +204,14 @@ class TransfromerTrainer:
             result_dict = get_metrics_train.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/(len(batch_gen.list_of_examples)/batch_size))
             self.train_result_dict.update(result_dict)
 
-            eval_args[7] = epoch
-            eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
-            self.predict(*eval_args)
+            #eval_args[7] = epoch
+            #eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
+            #self.predict(*eval_args)
 
         with open(f'{save_dir}/train_results.json', 'w') as fp:
             json.dump(self.train_result_dict, fp, indent=4)
-        with open(f'{save_dir}/eval_results.json', 'w') as fp:
-            json.dump(self.test_result_dict, fp, indent=4)
+        #with open(f'{save_dir}/eval_results.json', 'w') as fp:
+        #    json.dump(self.test_result_dict, fp, indent=4)
         self.writer.close()
 
     #### TODO :  ADAPT PREDICT FROM model.py : 
