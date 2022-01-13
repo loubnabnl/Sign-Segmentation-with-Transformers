@@ -192,9 +192,11 @@ class TransfromerTrainer:
                 )
                 count += 1
                 bar.next()
+
                 #print('batch ok !')
                 if count % 50 == 0:
                     print(bar.suffix)
+
             print('epoch ok')
             batch_gen.reset()
             torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".model")
@@ -204,15 +206,15 @@ class TransfromerTrainer:
             result_dict = get_metrics_train.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/(len(batch_gen.list_of_examples)/batch_size))
             self.train_result_dict.update(result_dict)
 
-            #eval_args[7] = epoch
-            #eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
+            eval_args[7] = epoch
+            eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
             #self.predict(*eval_args)
 
-        with open(f'{save_dir}/train_results.json', 'w') as fp:
-            json.dump(self.train_result_dict, fp, indent=4)
+        #with open(f'{save_dir}/train_results.json', 'w') as fp:
+        #    json.dump(self.train_result_dict, fp, indent=4)
         #with open(f'{save_dir}/eval_results.json', 'w') as fp:
         #    json.dump(self.test_result_dict, fp, indent=4)
-        self.writer.close()
+        #self.writer.close()
 
     #### TODO :  ADAPT PREDICT FROM model.py : 
     def predict(): 
