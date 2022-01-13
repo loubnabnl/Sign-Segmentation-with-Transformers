@@ -118,6 +118,7 @@ class TransfromerTrainer:
     def __init__(self, nhead, nhid, dim_feedforward, num_layers, num_classes, dropout, device, weights, save_dir):
         #self.model = MultiStageModel(num_blocks, num_layers, num_f_maps, dim, num_classes)
         self.model = TransformerClassifier(nhead, nhid, dim_feedforward, num_layers, num_classes, dropout)
+        self.nhid = nhid
         
         if weights is None:
             self.ce = nn.CrossEntropyLoss(ignore_index=-100)
@@ -133,7 +134,7 @@ class TransfromerTrainer:
         self.train_result_dict = {}
         self.test_result_dict = {}
 
-    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, device, eval_args, pretrained=''):
+    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, device, eval_args, lr_mul=1, n_warmup_steps=100, pretrained='',):
         self.model.train()
         self.model.to(device)
 
@@ -142,8 +143,12 @@ class TransfromerTrainer:
             pretrained_dict = torch.load(pretrained)
             self.model.load_state_dict(pretrained_dict)
 
-        optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
-
+        #optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        #optimizer from Attention is all you need paper
+        optimizer = ScheduledOptim(
+            optim.Adam(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09),
+            lr_mul, self.nhid, n_warmup_steps)
+        
         for epoch in range(num_epochs):
             epoch_loss = 0
             end = time.time()
@@ -158,7 +163,7 @@ class TransfromerTrainer:
                 batch_input, batch_target, batch_target_eval, padding_mask = batch_gen.next_batch(batch_size)
                 batch_input, batch_target, batch_target_eval, padding_mask = batch_input.permute(2, 0, 1).to(device), batch_target.permute(1,0).to(device), batch_target_eval.permute(1,0).to(device),  padding_mask.permute(2, 0, 1).to(device)
                 #src_mask = self.model.base.generate_square_subsequent_mask(batch_input.size(0)).to(device) ## to change...
-                src_mask = None
+                src_mask = None                
                 optimizer.zero_grad()
                 key_padding_mask = (padding_mask[:,:,0:1]< 1).squeeze(2).permute(1,0)
                 predictions = self.model(batch_input, src_mask, key_padding_mask)
@@ -169,8 +174,9 @@ class TransfromerTrainer:
                 loss += 0.15*torch.mean(torch.clamp(self.mse(F.log_softmax(predictions[1:, :, :], dim=2), F.log_softmax(predictions.detach()[:-1, :, :], dim=2)), min=0, max=16)*padding_mask[1:, :, :])                
                 epoch_loss += loss.item()
                 loss.backward()
-                optimizer.step()
-
+                #optimizer.step()
+                optimizer.step_and_update_lr()
+                
                 _, predicted = torch.max(predictions.data, 2)
                 gt = batch_target
                 gt_eval = batch_target_eval
@@ -182,12 +188,13 @@ class TransfromerTrainer:
                 end = time.time()
 
                 # plot progress
-                bar.suffix = "({batch}/{size}) Batch: {bt:.1f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:}".format(
+                bar.suffix = "({batch}/{size}) Batch: {bt:.1f}s | Total: {total:} | ETA: {eta:} | LR: {lr:} | Loss: {loss:}".format(
                     batch=count + 1,
                     size=batch_gen.get_max_index() / batch_size,
                     bt=batch_time.avg,
                     total=bar.elapsed_td,
                     eta=datetime.timedelta(seconds=ceil((bar.eta_td/batch_size).total_seconds())),
+                    lr = round(optimizer._optimizer.param_groups[0]['lr'], 7),
                     loss=loss.item()
                 )
                 count += 1
@@ -196,7 +203,6 @@ class TransfromerTrainer:
                 #print('batch ok !')
                 if count % 50 == 0:
                     print(bar.suffix)
-
             print('epoch ok')
             batch_gen.reset()
             torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".model")
@@ -219,3 +225,44 @@ class TransfromerTrainer:
     #### TODO :  ADAPT PREDICT FROM model.py : 
     def predict(): 
         pass
+    
+class ScheduledOptim():
+    '''A simple wrapper class for learning rate scheduling
+    source code: https://github.com/jadore801120/attention-is-all-you-need-pytorch/blob/132907dd272e2cc92e3c10e6c4e783a87ff8893d/transformer/Optim.py#L4'''
+
+    def __init__(self, optimizer, lr_mul, d_model, n_warmup_steps):
+        self._optimizer = optimizer
+        self.lr_mul = lr_mul
+        self.d_model = d_model
+        self.n_warmup_steps = n_warmup_steps
+        self.n_steps = 0
+
+
+    def step_and_update_lr(self):
+        "Step with the inner optimizer"
+        self._update_learning_rate()
+        self._optimizer.step()
+
+
+    def zero_grad(self):
+        "Zero out the gradients with the inner optimizer"
+        self._optimizer.zero_grad()
+
+
+    def _get_lr_scale(self):
+        d_model = self.d_model
+        n_steps, n_warmup_steps = self.n_steps, self.n_warmup_steps
+        return (d_model ** -0.5) * min(n_steps ** (-0.5), n_steps * n_warmup_steps ** (-1.5))
+
+
+    def _update_learning_rate(self):
+        ''' Learning rate scheduling per step '''
+
+        self.n_steps += 1
+        lr = self.lr_mul * self._get_lr_scale()
+
+        for param_group in self._optimizer.param_groups:
+            param_group['lr'] = lr
+    def state_dict(self):
+        ''' Optimizer state '''
+        return self._optimizer.state_dict()
