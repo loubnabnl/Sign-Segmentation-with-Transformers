@@ -85,14 +85,17 @@ class TransformerClassifier(nn.Module):
         self.base = TransformerModel(nhead, dim_feedforward, nhid, nlayers)
         self.classifier =  ClassificationHead(nhid, nclasses)
 
-    def forward(self, src, src_mask, src_key_padding_mask):
-        ## !!!! TO ADD : src_key_paddins_mask in transformer !! 
+    def forward(self, src, src_mask, src_key_padding_mask, padding_mask):
+        ''' src_mask: for attention to mask future values
+        src_key_padding_mask: for attention to mask padding values, size=(bz, sequence_len), zeros are conserverd
+        and ones are masked
+        padding_mask: original padding mask size=(sequence_len, bz, num_classes), only indexes zeros are masked in         the output'''
 
         # base model
         x = self.base(src, src_mask, src_key_padding_mask)
         # classifier model
         output = self.classifier(x)
-        return output
+        return output * padding_mask[:, :, 0:1]
 
 class PositionalEncoding(nn.Module):
     def __init__(self, nhid, dropout=0.1, max_len=5000):
@@ -113,6 +116,20 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[: x.size(0), :]
         return self.dropout(x)
 
+class LearnedPositionalEmbedding(nn.Module):
+
+    def __init__(self, nhid, max_len=512):
+        super().__init__()
+
+        # Compute the positional encodings once in log space.
+        pe = torch.zeros(max_len, nhid).float().to(device='cuda')
+        pe.require_grad = True
+        pe = pe.unsqueeze(0)
+        self.pe=nn.Parameter(pe)
+        torch.nn.init.normal_(self.pe, std = nhid ** -0.5)
+
+    def forward(self, x):
+        return self.pe[:, :x.size(1)]
 
 class TransfromerTrainer:
     def __init__(self, nhead, nhid, dim_feedforward, num_layers, num_classes, dropout, device, weights, save_dir):
@@ -166,7 +183,7 @@ class TransfromerTrainer:
                 src_mask = None                
                 optimizer.zero_grad()
                 key_padding_mask = (padding_mask[:,:,0:1]< 1).squeeze(2).permute(1,0)
-                predictions = self.model(batch_input, src_mask, key_padding_mask)
+                predictions = self.model(batch_input, src_mask, key_padding_mask, padding_mask)
 
                 loss = 0
                 # loss for each stage !
@@ -181,7 +198,7 @@ class TransfromerTrainer:
                 gt = batch_target
                 gt_eval = batch_target_eval
 
-                get_metrics_train.calc_scores_per_batch(predicted, gt, gt_eval, padding_mask.permute(0, 2, 1))
+                get_metrics_train.calc_scores_per_batch(predicted.permute(1,0), gt.permute(1,0), gt_eval.permute(1,0), padding_mask.permute(1,2,0))
 
                 # measure elapsed time
                 batch_time.update(time.time() - end)
