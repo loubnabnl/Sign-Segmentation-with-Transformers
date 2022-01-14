@@ -231,17 +231,109 @@ class TransfromerTrainer:
 
             eval_args[7] = epoch
             eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
-            #self.predict(*eval_args)
+            self.predict(*eval_args)
 
-        #with open(f'{save_dir}/train_results.json', 'w') as fp:
-        #    json.dump(self.train_result_dict, fp, indent=4)
-        #with open(f'{save_dir}/eval_results.json', 'w') as fp:
-        #    json.dump(self.test_result_dict, fp, indent=4)
-        #self.writer.close()
+        with open(f'{save_dir}/train_results.json', 'w') as fp:
+            json.dump(self.train_result_dict, fp, indent=4)
+        with open(f'{save_dir}/eval_results.json', 'w') as fp:
+            json.dump(self.test_result_dict, fp, indent=4)
+        self.writer.close()
 
-    #### TODO :  ADAPT PREDICT FROM model.py : 
-    def predict(): 
-        pass
+    def predict(self, args, model_dir, results_dir, features_dict, gt_dict, gt_dict_dil, vid_list_file, epoch, device, mode, classification_threshold, uniform=0, save_pslabels=False, CP_dict=None):
+        
+        save_score_dict = {}
+        metrics_per_signer = {}
+        get_metrics_test = Metric(mode)
+
+        self.model.eval()
+        with torch.no_grad():
+            
+            if CP_dict is None:
+                self.model.to(device)
+                #self.model.load_state_dict(torch.load(model_dir))
+
+            epoch_loss = 0
+            for vid in tqdm(vid_list_file):
+                features = np.swapaxes(features_dict[vid], 0, 1)
+                features = np.swapaxes(features_dict[vid], 0, 1)
+                input_x = torch.tensor(features, dtype=torch.float)
+                input_x.unsqueeze_(0)
+                input_x = input_x.permute(2,0,1).to(device)
+                padding_mask = torch.ones((input_x.size()[0], 1, 2), device=device)
+                key_padding_mask = (padding_mask[:,:,0:1]< 1).squeeze(2).permute(1,0)
+                predictions = self.model(input_x, None, key_padding_mask, padding_mask)
+
+                num_iter = 1
+                pred_prob = torch_to_list(nn.Softmax(dim=2)(predictions))
+                predicted = torch.tensor(np.where(np.asarray(pred_prob) > args.classification_threshold, 1, 0)).to(device)
+                gt = torch.tensor(gt_dict[vid]).to(device)
+                gt_eval = torch.tensor(gt_dict_dil[vid]).to(device)
+
+                loss = 0
+                loss += self.ce(predictions.transpose(2, 1).contiguous().view(-1, self.num_classes), gt.reshape(-1))
+                loss += 0.15*torch.mean(torch.clamp(self.mse(F.log_softmax(predictions[1:, :, :], dim=2), F.log_softmax(predictions.detach()[:-1, :, :], dim=2)), min=0, max=16)*padding_mask[1:, :, :])                
+
+                epoch_loss += loss.item()
+
+                cut_endpoints = True
+                if cut_endpoints:
+                  if sum(predicted[-2:,:, 1]) > 0 and sum(gt_eval[-4:]) == 0:
+                    ## !! should we put predicted[-2:,:,0] or predicted[-2,:,:1] !! 
+                    for j in range(len(predicted[:, :, 1])-1, 0, -1):
+                        if predicted[j, :, 1] != 0:
+                            predicted[j, : , 1] = 0
+                        elif predicted[j, :, 1] == 0 and j < len(predicted) - 2:
+                            break
+                if sum(predicted[:2, :, 1]) > 0 and sum(gt_eval[:4]) == 0:
+                  check = 0
+                  for j, item in enumerate(predicted[:, :, 1]):
+                      if item != 0:
+                          predicted[j, :, 1] = 0
+                          check = 1
+                      elif item == 0 and (j > 2 or check):
+                        break
+                
+                get_metrics_test.calc_scores_per_batch(predicted[:,:,1].permute(0,1), gt.unsqueeze(0), gt_eval.unsqueeze(0))       ## !! predicted[:,:,0] ou predicted[:,:,1]
+
+                save_score_dict[vid] = {}
+                save_score_dict[vid]['scores'] = np.asarray(pred_prob) ## check this 
+                save_score_dict[vid]['gt'] = torch_to_list(gt)
+
+                if mode == 'test' and args.viz_results:
+                    if not isinstance(vid, int):
+                        f_name = vid.split('/')[-1].split('.')[0]
+                    else:
+                        f_name = str(vid)
+
+                    viz_results_paper(
+                        gt,
+                        torch_to_list(predicted),
+                        name=results_dir + "/" + f'{f_name}',
+                        pred_prob=pred_prob,
+                    )
+
+            if mode == 'test':
+              pickle.dump(save_score_dict, open(f'{results_dir}/scores.pkl', "wb"))
+
+            get_metrics_test.calc_metrics()
+            save_dir = results_dir if mode == 'test' else Path(model_dir).parent
+            result_dict = get_metrics_test.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/len(vid_list_file))
+            self.test_result_dict.update(result_dict)
+
+        if mode == 'test':
+          with open(f'{results_dir}/eval_results.json', 'w') as fp:
+              json.dump(self.test_result_dict, fp, indent=4)
+
+
+
+
+
+
+
+
+
+
+
     
 class ScheduledOptim():
     '''A simple wrapper class for learning rate scheduling
