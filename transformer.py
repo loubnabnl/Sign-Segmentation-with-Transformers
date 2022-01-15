@@ -15,6 +15,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from utils import Bar
 from utils.viz import viz_results_paper
@@ -24,7 +25,7 @@ from eval import Metric
 
 
 class TransformerModel(nn.Module):
-    def __init__(self, nhead, dim_feedforward, nhid, nlayers, dropout=0.5):
+    def __init__(self, nhead, nhid, dim_feedforward, nlayers, dropout=0.1, ninput=1024):
         super(TransformerModel, self).__init__()
         '''
         dim_feedforward : the feedforward dimension of the model. 
@@ -35,7 +36,7 @@ class TransformerModel(nn.Module):
         dropout: the dropout value
          '''
         self.model_type = "Transformer"
-        ##self.encoder = nn.Embedding(ntoken, nhid) # fill me, nhid = the dim_embed
+        self.encoder = nn.Linear(ninput, nhid)
         self.pos_encoder = PositionalEncoding(nhid) #fill me, the PositionalEncoding class is implemented in the next cell
         encoder_layers = nn.TransformerEncoderLayer(nhid, nhead, dim_feedforward=dim_feedforward) #fill me we assume nhid = d_model = dim_feedforward
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, nlayers) #fill me
@@ -53,14 +54,12 @@ class TransformerModel(nn.Module):
 
     def init_weights(self):
         initrange = 0.1
-        ##self.encoder.weight.data.uniform_(-initrange, initrange)
+        self.encoder.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, src, src_mask, src_key_padding_mask):
-        ## !! to do : padding mask 
-
-        ##src = self.encoder(src) * math.sqrt(self.nhid) 
-        src = self.pos_encoder(src * math.sqrt(self.nhid))
-        output = self.transformer_encoder(src, src_mask, src_key_padding_mask)
+        out = self.encoder(src) * math.sqrt(self.nhid) 
+        out = self.pos_encoder(out)
+        output = self.transformer_encoder(out, src_mask, src_key_padding_mask)
         return output
 
 
@@ -80,9 +79,9 @@ class ClassificationHead(nn.Module):
         return output
     
 class TransformerClassifier(nn.Module):
-    def __init__(self, nhead, nhid, dim_feedforward, nlayers, nclasses, dropout=0.5):
+    def __init__(self, nhead, nhid, dim_feedforward, nlayers, nclasses, dropout=0.5, ninput=1024):
         super(TransformerClassifier, self).__init__()
-        self.base = TransformerModel(nhead, dim_feedforward, nhid, nlayers)
+        self.base = TransformerModel(nhead, nhid, dim_feedforward, nlayers, dropout, ninput)
         self.classifier =  ClassificationHead(nhid, nclasses)
 
     def forward(self, src, src_mask, src_key_padding_mask, padding_mask):
@@ -131,6 +130,7 @@ class LearnedPositionalEmbedding(nn.Module):
     def forward(self, x):
         return self.pe[:, :x.size(1)]
 
+
 class TransfromerTrainer:
     def __init__(self, nhead, nhid, dim_feedforward, num_layers, num_classes, dropout, device, weights, save_dir):
         #self.model = MultiStageModel(num_blocks, num_layers, num_f_maps, dim, num_classes)
@@ -160,12 +160,13 @@ class TransfromerTrainer:
             pretrained_dict = torch.load(pretrained)
             self.model.load_state_dict(pretrained_dict)
 
-        #optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
         #optimizer from Attention is all you need paper
-        optimizer = ScheduledOptim(
-            optim.Adam(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09),
-            lr_mul, self.nhid, n_warmup_steps)
-        
+        #optimizer = ScheduledOptim(
+        #    optim.Adam(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09),
+        #    lr_mul, self.nhid, n_warmup_steps)
+        #scheduler = ReduceLROnPlateau(optimizer, 'max', patience=3)
+
         for epoch in range(num_epochs):
             epoch_loss = 0
             end = time.time()
@@ -191,8 +192,8 @@ class TransfromerTrainer:
                 loss += 0.15*torch.mean(torch.clamp(self.mse(F.log_softmax(predictions[1:, :, :], dim=2), F.log_softmax(predictions.detach()[:-1, :, :], dim=2)), min=0, max=16)*padding_mask[1:, :, :])                
                 epoch_loss += loss.item()
                 loss.backward()
-                #optimizer.step()
-                optimizer.step_and_update_lr()
+                optimizer.step()
+                #optimizer.step_and_update_lr()
                 
                 _, predicted = torch.max(predictions.data, 2)
                 gt = batch_target
@@ -205,13 +206,13 @@ class TransfromerTrainer:
                 end = time.time()
 
                 # plot progress
-                bar.suffix = "({batch}/{size}) Batch: {bt:.1f}s | Total: {total:} | ETA: {eta:} | LR: {lr:} | Loss: {loss:}".format(
+                bar.suffix = "({batch}/{size}) Batch: {bt:.1f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:}".format(
                     batch=count + 1,
                     size=batch_gen.get_max_index() / batch_size,
                     bt=batch_time.avg,
                     total=bar.elapsed_td,
                     eta=datetime.timedelta(seconds=ceil((bar.eta_td/batch_size).total_seconds())),
-                    lr = round(optimizer._optimizer.param_groups[0]['lr'], 7),
+                    #lr = round(optimizer._optimizer.param_groups[0]['lr'], 7),
                     loss=loss.item()
                 )
                 count += 1
@@ -228,7 +229,8 @@ class TransfromerTrainer:
             get_metrics_train.calc_metrics()
             result_dict = get_metrics_train.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/(len(batch_gen.list_of_examples)/batch_size))
             self.train_result_dict.update(result_dict)
-
+            print(result_dict[epoch]['mF1B'])
+            #scheduler.step(result_dict[epoch]['mF1B'])
             eval_args[7] = epoch
             eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
             self.predict(*eval_args)
@@ -255,7 +257,6 @@ class TransfromerTrainer:
             epoch_loss = 0
             for vid in tqdm(vid_list_file):
                 features = np.swapaxes(features_dict[vid], 0, 1)
-                features = np.swapaxes(features_dict[vid], 0, 1)
                 input_x = torch.tensor(features, dtype=torch.float)
                 input_x.unsqueeze_(0)
                 input_x = input_x.permute(2,0,1).to(device)
@@ -264,7 +265,7 @@ class TransfromerTrainer:
                 predictions = self.model(input_x, None, key_padding_mask, padding_mask)
 
                 num_iter = 1
-                pred_prob = torch_to_list(nn.Softmax(dim=2)(predictions))
+                pred_prob = torch_to_list(nn.Softmax(dim=2)(predictions.detach()))
                 predicted = torch.tensor(np.where(np.asarray(pred_prob) > args.classification_threshold, 1, 0)).to(device)
                 gt = torch.tensor(gt_dict[vid]).to(device)
                 gt_eval = torch.tensor(gt_dict_dil[vid]).to(device)
@@ -276,6 +277,7 @@ class TransfromerTrainer:
                 epoch_loss += loss.item()
 
                 cut_endpoints = True
+                #predicted2 = predicted.squeeze(1)[:,1]
                 if cut_endpoints:
                   if sum(predicted[-2:,:, 1]) > 0 and sum(gt_eval[-4:]) == 0:
                     ## !! should we put predicted[-2:,:,0] or predicted[-2,:,:1] !! 
@@ -293,7 +295,7 @@ class TransfromerTrainer:
                       elif item == 0 and (j > 2 or check):
                         break
                 
-                get_metrics_test.calc_scores_per_batch(predicted[:,:,1].permute(0,1), gt.unsqueeze(0), gt_eval.unsqueeze(0))       ## !! predicted[:,:,0] ou predicted[:,:,1]
+                get_metrics_test.calc_scores_per_batch(predicted[:,:,1].permute(1,0), gt.unsqueeze(0), gt_eval.unsqueeze(0))       ## !! predicted[:,:,0] ou predicted[:,:,1]
 
                 save_score_dict[vid] = {}
                 save_score_dict[vid]['scores'] = np.asarray(pred_prob) ## check this 
@@ -323,16 +325,6 @@ class TransfromerTrainer:
         if mode == 'test':
           with open(f'{results_dir}/eval_results.json', 'w') as fp:
               json.dump(self.test_result_dict, fp, indent=4)
-
-
-
-
-
-
-
-
-
-
 
     
 class ScheduledOptim():
