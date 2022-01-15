@@ -16,6 +16,7 @@ __pycache__/
 data/*
 tests/exps/*
 test_new_model/exps/*
+test_asformer/exps/*
 
 !demo/sample_data/demo_video.mp4
 !demo/results/demo.mp4
