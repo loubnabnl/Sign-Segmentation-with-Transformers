@@ -392,7 +392,12 @@ class ASFormerTrainer:
                 total += torch.sum(mask[:, 0, :]).item()
                 gt = batch_target
                 gt_eval = batch_target_eval
-                get_metrics_train.calc_scores_per_batch(predicted, gt, gt_eval, mask)
+
+                try:
+                    get_metrics_train.calc_scores_per_batch(predicted, gt, gt_eval, mask)
+                except ValueError:  #raised if `y` is empty.
+                    pass
+                #get_metrics_train.calc_scores_per_batch(predicted, gt, gt_eval, mask)
 
                 # measure elapsed time
                 batch_time.update(time.time() - end)
@@ -421,10 +426,13 @@ class ASFormerTrainer:
             torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".model")
             torch.save(optimizer.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".opt")
             
-            get_metrics_train.calc_metrics()
-            result_dict = get_metrics_train.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/(len(batch_gen.list_of_examples)/batch_size))
-            self.train_result_dict.update(result_dict)
-
+            try:
+                get_metrics_train.calc_metrics()
+                result_dict = get_metrics_train.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/(len(batch_gen.list_of_examples)/batch_size))
+                self.train_result_dict.update(result_dict)
+            except ValueError:  #raised if `y` is empty.
+                pass
+                
             eval_args[7] = epoch
             eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
             self.test(*eval_args) 
@@ -435,26 +443,6 @@ class ASFormerTrainer:
               json.dump(self.test_result_dict, fp, indent=4)
             self.writer.close()
            
-
-    def test(self, batch_gen_tst, epoch):
-        self.model.eval()
-        correct = 0
-        total = 0
-        if_warp = False  # When testing, always false
-        with torch.no_grad():
-            while batch_gen_tst.has_next():
-                batch_input, batch_target, mask, vids = batch_gen_tst.next_batch(1, if_warp)
-                batch_input, batch_target, mask = batch_input.to(device), batch_target.to(device), mask.to(device)
-                p = self.model(batch_input, mask)
-                _, predicted = torch.max(p.data[-1], 1)
-                correct += ((predicted == batch_target).float() * mask[:, 0, :].squeeze(1)).sum().item()
-                total += torch.sum(mask[:, 0, :]).item()
-
-        acc = float(correct) / total
-        print("---[epoch %d]---: tst acc = %f" % (epoch + 1, acc))
-
-        self.model.train()
-        batch_gen_tst.reset()
 
     def test(self, args, model_dir, results_dir, features_dict, gt_dict, gt_dict_dil, vid_list_file, epoch, device, mode, classification_threshold, uniform=0, save_pslabels=False, CP_dict=None):
         
@@ -476,7 +464,7 @@ class ASFormerTrainer:
                 input_x = torch.tensor(features, dtype=torch.float)
                 input_x.unsqueeze_(0)
                 input_x = input_x.to(device)
-                mask = torch.ones(input_x.size(), device=device)
+                mask = torch.ones(input_x.size(), device = device)
                 predictions = self.model(input_x, mask)
 
                 num_iter = 1
@@ -490,7 +478,7 @@ class ASFormerTrainer:
                     loss += self.ce(p.transpose(2, 1).contiguous().view(-1, self.num_classes), gt.view(-1))
                     loss += 0.15 * torch.mean(torch.clamp(
                         self.mse(F.log_softmax(p[:, :, 1:], dim=1), F.log_softmax(p.detach()[:, :, :-1], dim=1)), min=0,
-                        max=16) * mask[:, :, 1:])
+                        max=16))
 
                 epoch_loss += loss.item()
 
@@ -513,7 +501,7 @@ class ASFormerTrainer:
                 #       elif item == 0 and (j > 2 or check):
                 #         break
                 
-                get_metrics_test.calc_scores_per_batch(predicted.unsqueeze(0), gt.unsqueeze(0), gt_eval.unsqueeze(0))       ## !! predicted[:,:,0] ou predicted[:,:,1]
+                get_metrics_test.calc_scores_per_batch(predicted[-1,:,1,:], gt.unsqueeze(0), gt_eval.unsqueeze(0))       ## !! predicted[:,:,0] ou predicted[:,:,1]
 
                 save_score_dict[vid] = {}
                 save_score_dict[vid]['scores'] = np.asarray(pred_prob) ## check this 
@@ -543,3 +531,4 @@ class ASFormerTrainer:
         if mode == 'test':
           with open(f'{results_dir}/eval_results.json', 'w') as fp:
               json.dump(self.test_result_dict, fp, indent=4)
+
