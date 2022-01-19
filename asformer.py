@@ -486,7 +486,7 @@ class ASFormerTrainer:
                 if cut_endpoints:
                   if torch.sum(predicted[-1, :, 1, -2:]) > 0 and sum(gt_eval[-4:]) == 0:
                     ## !! should we put predicted[-2:,:,0] or predicted[-2,:,:1] !! 
-                    for j in range(0, predicted.size(3)-1, 0, -1):
+                    for j in range(predicted.size(3)-1, 0, -1):
                         if predicted[-1, 0, 1, j] != 0:
                             predicted[-1, 0, 1, j] = 0
                         elif bool(predicted[-1, 0, 1, j] == 0) and j < predicted.size(3) - 2:
