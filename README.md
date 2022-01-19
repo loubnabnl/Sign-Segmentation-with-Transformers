@@ -1,11 +1,13 @@
-# Temporal segmentation of sign language videos
-This repository provides code for following two papers:
+# MVA RecVis course final project : 
 
-- [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/) and [Gül Varol](https://www.robots.ox.ac.uk/~gul),
-*Sign language segmentation with temporal convolutional networks*, ICASSP 2021.  [[arXiv]](https://arxiv.org/abs/2011.12986)
+## Goal of the project : Detecting Temporal Boundaries in Sign Language videos. 
 
-- [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Neil Fox](https://www.ucl.ac.uk/dcal/people/research-staff/neil-fox), [Gül Varol](https://www.robots.ox.ac.uk/~gul) and [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/),
-*Sign Segmentation with Changepoint-Modulated Pseudo-Labelling*, CVPRW 2021. [[arXiv]](https://arxiv.org/abs/2104.13817)
+Sign language automatic indexing is an important challenge to develop better communication tools for the deaf community. However, annotated datasets for sign langage are limited, and people with skills to anotate data are rare, which makes it hard to train performant machine learning models. An important challenge is therefore to : 
+
+*  Increase available training datasets. 
+*  Make labeling easier for professionnals to reduce risks of bad annotations. 
+
+In this context, techniques have emerged to perform automatic sign segmentation in videos, by marking the boundaries between individual signs in sign language videos. The developpment of such tools offers the potential to alleviate the limited supply of labelled dataset currently available for sign research. 
 
 [[Project page]](https://www.robots.ox.ac.uk/~vgg/research/signsegmentation/)
 
@@ -13,6 +15,7 @@ This repository provides code for following two papers:
 
 ## Contents
 * [Setup](#setup)
+* [Previous works and personal contribution](#previous-works-personal-contribution)
 * [Data and models](#data-and-models)
 * [Demo](#demo)
 * [Training](#training)
@@ -26,12 +29,25 @@ This repository provides code for following two papers:
 
 ``` bash
 # Clone this repository
-git clone git@github.com:RenzKa/sign-segmentation.git
-cd sign-segmentation/
+git clone https://github.com/kamilakesbi/MVARecVisProject.git
+cd MVARecVisProject/
 # Create signseg_env environment
 conda env create -f environment.yml
 conda activate signseg_env
 ```
+
+## Previous works and personal contribution : 
+
+This repository provides code for the RecVis course Final project. In this project, we reproduced the results obtained on the following paper (by using the code from [here](https://github.com/RenzKa/sign-segmentation)) :  
+
+- [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/) and [Gül Varol](https://www.robots.ox.ac.uk/~gul),
+*Sign language segmentation with temporal convolutional networks*, ICASSP 2021.  [[arXiv]](https://arxiv.org/abs/2011.12986)
+
+We used the pre-extracted frame-level features obtained by applying the I3D model on videos to retrain the MS-TCN architecture for frame binary classification and reproduce the papers results. The test folder proposes a notebook for reproducing the original paper results, with a $meanF1B = 68.68$.
+
+
+
+
 
 ## Data and models
 You can download our pretrained models (`models.zip [302MB]`) and data (`data.zip [5.5GB]`) used in the experiments [here](https://drive.google.com/drive/folders/17DaatdfD4GRnLJJ0RX5TcSfHGMxMS0Lm?usp=sharing) or by executing `download/download_*.sh`. The unzipped `data/` and `models/` folders should be located on the root directory of the repository (for using the demo downloading the `models` folder is sufficient).
@@ -109,24 +125,6 @@ During the training a `.log` file for tensorboard is generated. In addition the 
 |4| PHOENIX14 | PHOENIX14 | 71.50<sub>±0.2</sub> |52.78<sub>±1.6</sub> | [run](https://drive.google.com/file/d/1jAfJPs58ErT-UTnN3mPstOhekAgTCLEY/view?usp=sharing), [args](https://drive.google.com/file/d/1ak6VOuLvv6hrDEUsJbI1WcGoJGfVpUi5/view?usp=sharing), [I3D model](https://drive.google.com/file/d/1pbldZLqFSS2E0hoh1f4hiTvB9jL3QGOB/view?usp=sharing), [MS-TCN model](https://drive.google.com/file/d/1q0bShF9IpuuSHrJyZIPNMUsC5guQ0B8m/view?usp=sharing), [logs](https://drive.google.com/drive/folders/1wk5dly6jxKEivO3q5BEahTtLSsrPK1of?usp=sharing) |
 
 
-
-### Train CVPRW
-*Requirement:* pre-extracted pseudo-labels/ changepoints or CMPL-labels:
-1. Save pre-trained model in ```models/ms-tcn/*.model```
-2. a) Extract pseudo-labels before extracting CMPL-labels: [Extract only PL](https://drive.google.com/file/d/1ixM0leAeR_JU2n-yZuo6O7zA1h_amUBR/view?usp=sharing) | [Extract CMPL](https://drive.google.com/file/d/1juiYMWX_V8Au8LAoPYycgD5ejYA8ZlZg/view?usp=sharing) | [Extract PL and CMPL](https://drive.google.com/file/d/1lvbAgqCdmxsPcAZysGJVGTsjr7IgCplj/view?usp=sharing)
- b) Extract Changepoints separately for training: [Extract CP](https://drive.google.com/file/d/1urZxzZ4qlK46Ad5_8SJDzXVu4NFlGbNn/view?usp=sharing)
--> specify correct model path
-
-* Pseudo-labelling techniques on PHOENIX14
-
-|ID| Method | Adaptation protocol | mF1B | mF1S | Links (for seed=0) |
-|-|   -   |   -  |   -  |   -   |   -   | 
-|5| Pseudo-labels | inductive | 47.94<sub>±1.0</sub> | 32.45<sub>±0.3</sub> | [run](https://drive.google.com/file/d/1qgvJsKzgA-eutZVAba_jt2TucXYLTnDM/view?usp=sharing), [args](https://drive.google.com/file/d/1dcC-heRxyGnnAVgKFvprkhRbrPCkqPMn/view?usp=sharing), [I3D model](https://drive.google.com/file/d/1pbldZLqFSS2E0hoh1f4hiTvB9jL3QGOB/view?usp=sharing), [MS-TCN model](https://drive.google.com/file/d/1pqDmCo_GBvWx0OO2mRbQdoy_9lG-TDEo/view?usp=sharing), [logs](https://drive.google.com/drive/folders/1xSYTd7mCqmmk6pCGrHAncS5RoxJjwQ0-?usp=sharing) |
-|6| Changepoints | inductive | 48.51<sub>±0.4</sub> | 34.45<sub>±1.4</sub> | [run](https://drive.google.com/file/d/117HicDNam1sMFI7uV4dzOW-J8RoMZL63/view?usp=sharing), [args](https://drive.google.com/file/d/1skuhL7tP9BhuaZ6Vh9u_BO3AJAmmQmkD/view?usp=sharing), [I3D model](https://drive.google.com/file/d/1pbldZLqFSS2E0hoh1f4hiTvB9jL3QGOB/view?usp=sharing), [MS-TCN model](https://drive.google.com/file/d/1LP5alfee4DfGZVz4bkWO7v2GoJ7OP4cD/view?usp=sharing), [logs](https://drive.google.com/drive/folders/1jC5w7Dg5LKse4T4OtTCYM_0w7JCW5OnF?usp=sharing) |
-|7| CMPL | inductive | 53.57<sub>±0.7</sub> | 33.82<sub>±0.0</sub> | [run](https://drive.google.com/file/d/1lbhiQNqYpPWbxRmrxtRt-R-CzEbw21Ng/view?usp=sharing), [args](https://drive.google.com/file/d/16iQj5e0X8za0pMPZnFzst7el1jSUqDtk/view?usp=sharing), [I3D model](https://drive.google.com/file/d/1pbldZLqFSS2E0hoh1f4hiTvB9jL3QGOB/view?usp=sharing), [MS-TCN model](https://drive.google.com/file/d/13SM0Lh4_89am9RJvwc-3uDLbV_DwA-W0/view?usp=sharing), [logs](https://drive.google.com/drive/folders/1B4j4H2arehZjDNL2bjnM2I7LtAHHmm43?usp=sharing) |
-|8| Pseudo-labels | transductive | 47.62<sub>±0.4</sub> | 32.11<sub>±0.9</sub> | [run](https://drive.google.com/file/d/1HrWZ0LM_OR9bQL7ZKRVM_LAzb13d1QWX/view?usp=sharing), [args](https://drive.google.com/file/d/1KzuA_iqMtJ94Vlm6jRpslwxVgNmVSuvX/view?usp=sharing), [I3D model](https://drive.google.com/file/d/1pbldZLqFSS2E0hoh1f4hiTvB9jL3QGOB/view?usp=sharing), [MS-TCN model](https://drive.google.com/file/d/1TU1gf1AA1eGi5PBcBqvA_04Fynxu4xbx/view?usp=sharing), [logs](https://drive.google.com/drive/folders/1NdBzs9l4KIZ05g0-sKi2ftwvtZlhTl9a?usp=sharing) |
-|9| Changepoints | transductive | 48.29<sub>±0.1</sub> | 35.31<sub>±1.4</sub> | [run](https://drive.google.com/file/d/1fuqwrGyCjamUCY7DU2MMWnMPGeFVE6KU/view?usp=sharing), [args](https://drive.google.com/file/d/1h_YrYK9Q7F8shbMMkeaWbk1VrgJYmXXT/view?usp=sharing), [I3D model](https://drive.google.com/file/d/1pbldZLqFSS2E0hoh1f4hiTvB9jL3QGOB/view?usp=sharing), [MS-TCN model](https://drive.google.com/file/d/1N3qQlrvVOp79pAJ9uIo_fVTYMN_YXLL7/view?usp=sharing), [logs](https://drive.google.com/drive/folders/1e83LQ7ZbWdj6t9OYNsn7RRHiljm0zJF_?usp=sharing) |
-|10| CMPL | transductive | 53.53<sub>±0.1</sub> | 32.93<sub>±0.9</sub> | [run](https://drive.google.com/file/d/1_Ql5aia7Jo2xszeXZk7tbLP00z7bqrht/view?usp=sharing), [args](https://drive.google.com/file/d/1T3I2V53aPmdHHFZH4PDbo9pPCz8JIg1p/view?usp=sharing), [I3D model](https://drive.google.com/file/d/1pbldZLqFSS2E0hoh1f4hiTvB9jL3QGOB/view?usp=sharing), [MS-TCN model](https://drive.google.com/file/d/10tGdIcJCrJ9n40apjWXTN6KcQy0SUsNx/view?usp=sharing), [logs](https://drive.google.com/drive/folders/1xz_BSamWmxyBseXl50-2vh-2cUfTUkMy?usp=sharing) |
 
 ## Citation
 If you use this code and data, please cite the following:
