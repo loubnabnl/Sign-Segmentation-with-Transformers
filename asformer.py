@@ -482,24 +482,23 @@ class ASFormerTrainer:
 
                 epoch_loss += loss.item()
 
-                # cut_endpoints = True
-                #predicted2 = predicted.squeeze(1)[:,1]
-                # if cut_endpoints:
-                #   if sum(predicted[:, :, 1, -2:]) > 0 and sum(gt_eval[-4:]) == 0:
-                #     ## !! should we put predicted[-2:,:,0] or predicted[-2,:,:1] !! 
-                #     for j in range(len(predicted[:, :, 1])-1, 0, -1):
-                #         if predicted[:, :, 1, j] != 0:
-                #             predicted[:, :, 1, j] = 0
-                #         elif predicted[:, :, 1, j] == 0 and j < len(predicted) - 2:
-                #             break
-                # if sum(predicted[:, :, 1, 2:]) > 0 and sum(gt_eval[:4]) == 0:
-                #   check = 0
-                #   for j, item in enumerate(predicted[:, :, 1]):
-                #       if item != 0:
-                #           predicted[j, :, 1] = 0
-                #           check = 1
-                #       elif item == 0 and (j > 2 or check):
-                #         break
+                cut_endpoints = True
+                if cut_endpoints:
+                  if torch.sum(predicted[-1, :, 1, -2:]) > 0 and sum(gt_eval[-4:]) == 0:
+                    ## !! should we put predicted[-2:,:,0] or predicted[-2,:,:1] !! 
+                    for j in range(0, predicted.size(3)-1, 0, -1):
+                        if predicted[-1, 0, 1, j] != 0:
+                            predicted[-1, 0, 1, j] = 0
+                        elif bool(predicted[-1, 0, 1, j] == 0) and j < predicted.size(3) - 2:
+                            break
+                if torch.sum(predicted[-1, :, 1, :2]) > 0 and sum(gt_eval[:4]) == 0:
+                  check = 0
+                  for j, item in enumerate(predicted[-1, 0, 1, :2]):
+                      if item != 0:
+                          predicted[-1, 0, 1, j] = 0
+                          check = 1
+                      elif item == 0 and (j > 2 or check):
+                        break
                 
                 get_metrics_test.calc_scores_per_batch(predicted[-1,:,1,:], gt.unsqueeze(0), gt_eval.unsqueeze(0))       ## !! predicted[:,:,0] ou predicted[:,:,1]
 
