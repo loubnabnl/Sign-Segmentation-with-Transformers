@@ -9,18 +9,40 @@ Sign language automatic indexing is an important challenge to develop better com
 
 In this context, techniques have emerged to perform automatic sign segmentation in videos, by marking the boundaries between individual signs in sign language videos. The developpment of such tools offers the potential to alleviate the limited supply of labelled dataset currently available for sign research. 
 
-[[Project page]](https://www.robots.ox.ac.uk/~vgg/research/signsegmentation/)
+## Previous works and personal contribution : 
+
+This repository provides code for the RecVis course Final project. In this project, we reproduced the results obtained on the following paper (by using the code from [here](https://github.com/RenzKa/sign-segmentation)) :  
+
+- [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/) and [Gül Varol](https://www.robots.ox.ac.uk/~gul),
+*Sign language segmentation with temporal convolutional networks*, ICASSP 2021.  [[arXiv]](https://arxiv.org/abs/2011.12986)
+
+We used the pre-extracted frame-level features obtained by applying the I3D model on videos to retrain the MS-TCN architecture for frame binary classification and reproduce the papers results. The test folder proposes a notebook for reproducing the original paper results, with a meanF1B = 68.68.
+
+We further implemented new models in order to improve this result. We wanted to try attention based models as they have received recently a huge gain of interest in the vision research community. We first tried to train a Vanilla Transformer from scratch, but the results where not satisfactory.  
+
+- Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin: Attention Is All You Need (2018) [[arXiv]](https://arxiv.org/abs/1706.03762). 
+
+We then implemented the ASFormer model (Transformer for Action Segementation), using [here](https://github.com/ChinaYi/ASFormer) : an hybrid transformer model using some interesting ideas from the MS-TCN architecture. The motivations behind the model and its architecture are detailed in the following paper : 
+
+- ASFormer: Transformer for Action Segmentation, Fangqiu Yi, Hongyu Wen, Tingting Jiang [[arXiv]](https://arxiv.org/abs/2110.08568).
+
+
+We futher fine-tuned this model and obtained an improvement over the MS-TCN architecture. The results are given in the following table : 
+
+*TODO*
+
 
 ![demo](demo/results/demo.gif)
 
+
+
 ## Contents
 * [Setup](#setup)
-* [Previous works and personal contribution](#previous-works-personal-contribution)
 * [Data and models](#data-and-models)
 * [Demo](#demo)
 * [Training](#training)
   * [Train ICASSP](#train-icassp)
-  * [Train CVPRW](#train-cvprw)
+  
 * [Citation](#citation)
 * [License](#license)
 * [Acknowledgements](#acknowledgements)
@@ -35,18 +57,6 @@ cd MVARecVisProject/
 conda env create -f environment.yml
 conda activate signseg_env
 ```
-
-## Previous works and personal contribution : 
-
-This repository provides code for the RecVis course Final project. In this project, we reproduced the results obtained on the following paper (by using the code from [here](https://github.com/RenzKa/sign-segmentation)) :  
-
-- [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/) and [Gül Varol](https://www.robots.ox.ac.uk/~gul),
-*Sign language segmentation with temporal convolutional networks*, ICASSP 2021.  [[arXiv]](https://arxiv.org/abs/2011.12986)
-
-We used the pre-extracted frame-level features obtained by applying the I3D model on videos to retrain the MS-TCN architecture for frame binary classification and reproduce the papers results. The test folder proposes a notebook for reproducing the original paper results, with a $meanF1B = 68.68$.
-
-
-
 
 
 ## Data and models
