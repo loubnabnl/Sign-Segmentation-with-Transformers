@@ -20,11 +20,11 @@ We used the pre-extracted frame-level features obtained by applying the I3D mode
 
 We further implemented new models in order to improve this result. We wanted to try attention based models as they have received recently a huge gain of interest in the vision research community. We first tried to train a Vanilla Transformer from scratch, but the results where not satisfactory.  
 
-- Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin: Attention Is All You Need (2018) [[arXiv]](https://arxiv.org/abs/1706.03762). 
+- [*Attention Is All You Need*](https://arxiv.org/abs/1706.03762), Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin:  (2018). 
 
 We then implemented the ASFormer model (Transformer for Action Segementation), using [here](https://github.com/ChinaYi/ASFormer) : an hybrid transformer model using some interesting ideas from the MS-TCN architecture. The motivations behind the model and its architecture are detailed in the following paper : 
 
-- ASFormer: Transformer for Action Segmentation, Fangqiu Yi, Hongyu Wen, Tingting Jiang [[arXiv]](https://arxiv.org/abs/2110.08568).
+- [ASFormer: Transformer for Action Segmentation](https://arxiv.org/abs/2110.08568), Fangqiu Yi, Hongyu Wen, Tingting Jiang.
 
 
 We futher fine-tuned this model and obtained an improvement over the MS-TCN architecture. The results are given in the following table : 
