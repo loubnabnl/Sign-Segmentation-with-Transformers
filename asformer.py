@@ -349,15 +349,17 @@ class ASFormerTrainer:
         self.global_counter = 0
         self.train_result_dict = {}
         self.test_result_dict = {}
+        self.mean_f1b_test = 0 
 
-    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, eval_args,  batch_gen_tst=None):
+
+    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, batch_gen_tst=None):
         self.model.train()
         self.model.to(device)
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=1e-5)
         print('LR:{}'.format(learning_rate))
-        
-        
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+
+        early_stopping = EarlyStopping(patience=4, min_delta=0)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2, verbose=True)
         for epoch in range(num_epochs):
             epoch_loss = 0
             correct = 0
@@ -417,7 +419,7 @@ class ASFormerTrainer:
                 count += 1
                 if count % 50 == 0:
                     print(bar.suffix)
-                        
+
             scheduler.step(epoch_loss)
             batch_gen.reset()
             print("[epoch %d]: epoch loss = %f,   acc = %f" % (epoch + 1, epoch_loss / len(batch_gen.list_of_examples),
@@ -432,7 +434,7 @@ class ASFormerTrainer:
                 self.train_result_dict.update(result_dict)
             except ValueError:  #raised if `y` is empty.
                 pass
-                
+
             eval_args[7] = epoch
             eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
             self.test(*eval_args) 
@@ -442,7 +444,11 @@ class ASFormerTrainer:
             with open(f'{save_dir}/eval_results.json', 'w') as fp:
               json.dump(self.test_result_dict, fp, indent=4)
             self.writer.close()
-           
+
+            early_stopping(self.mean_f1b_test)
+            if early_stopping.early_stop:
+                break
+          
 
     def test(self, args, model_dir, results_dir, features_dict, gt_dict, gt_dict_dil, vid_list_file, epoch, device, mode, classification_threshold, uniform=0, save_pslabels=False, CP_dict=None):
         
@@ -489,6 +495,7 @@ class ASFormerTrainer:
                     for j in range(predicted.size(3)-1, 0, -1):
                         if predicted[-1, 0, 1, j] != 0:
                             predicted[-1, 0, 1, j] = 0
+                            #predicted[-1, 0, 0, j] = 1
                         elif bool(predicted[-1, 0, 1, j] == 0) and j < predicted.size(3) - 2:
                             break
                 if torch.sum(predicted[-1, :, 1, :2]) > 0 and sum(gt_eval[:4]) == 0:
@@ -496,6 +503,7 @@ class ASFormerTrainer:
                   for j, item in enumerate(predicted[-1, 0, 1, :2]):
                       if item != 0:
                           predicted[-1, 0, 1, j] = 0
+                          #predicted[-1, 0, 0, j] = 1
                           check = 1
                       elif item == 0 and (j > 2 or check):
                         break
@@ -523,6 +531,7 @@ class ASFormerTrainer:
               pickle.dump(save_score_dict, open(f'{results_dir}/scores.pkl', "wb"))
 
             get_metrics_test.calc_metrics()
+            self.mean_f1b_test = get_metrics_test.mean_f1b
             save_dir = results_dir if mode == 'test' else Path(model_dir).parent
             result_dict = get_metrics_test.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/len(vid_list_file))
             self.test_result_dict.update(result_dict)
@@ -531,3 +540,34 @@ class ASFormerTrainer:
           with open(f'{results_dir}/eval_results.json', 'w') as fp:
               json.dump(self.test_result_dict, fp, indent=4)
 
+
+class EarlyStopping():
+    """
+    Early stopping to stop the training when the loss does not improve after
+    certain epochs.
+    """
+    def __init__(self, patience=5, min_delta=0):
+        """
+        :param patience: how many epochs to wait before stopping when loss is
+               not improving
+        :param min_delta: minimum difference between new loss and old loss for
+               new loss to be considered as an improvement
+        """
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.best_loss = None
+        self.early_stop = False
+    def __call__(self, val_loss):
+        if self.best_loss == None:
+            self.best_loss = val_loss
+        elif self.best_loss - val_loss < self.min_delta:
+            self.best_loss = val_loss
+            # reset counter if validation loss improves
+            self.counter = 0
+        elif self.best_loss - val_loss > self.min_delta:
+            self.counter += 1
+            print(f"INFO: Early stopping counter {self.counter} of {self.patience}")
+            if self.counter >= self.patience:
+                print('INFO: Early stopping')
+                self.early_stop = True
