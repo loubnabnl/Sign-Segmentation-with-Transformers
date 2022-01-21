@@ -32,7 +32,6 @@ We trained this model on our I3D features and obtained an improvement over the M
 
 *TODO*
 
-
 ![demo](demo/results/demo.gif)
 
 
