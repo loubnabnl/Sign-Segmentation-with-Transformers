@@ -40,8 +40,6 @@ We trained this model on our I3D features and obtained an improvement over the M
 * [Data and models](#data-and-models)
 * [Demo](#demo)
 * [Training](#training)
-  * [Train ICASSP](#train-icassp)
-  
 * [Citation](#citation)
 * [License](#license)
 * [Acknowledgements](#acknowledgements)
@@ -63,7 +61,7 @@ You can download our pretrained models (`models.zip [302MB]`) and data (`data.zi
 
 
 ### Data:
-Please cite the original datasets when using the data: [BSL Corpus](https://bslcorpusproject.org/cava/acknowledgements-and-citation/) | [Phoenix14](https://www-i6.informatik.rwth-aachen.de/~koller/RWTH-PHOENIX/).
+Please cite the original datasets when using the data: [BSL Corpus](https://bslcorpusproject.org/cava/acknowledgements-and-citation/) 
 The authors of [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/sign-segmentation) provide the pre-extracted features and metadata. See [here](data/README.md) for a detailed description of the data files. 
 - Features: `data/features/*/*/features.mat`
 - Metadata: `data/info/*/info.pkl`
@@ -96,6 +94,7 @@ To train I3D please refer to [github.com/RenzKa/sign-segmentation](https://githu
 * Influence of I3D training (fully-supervised segmentation results on BSL Corpus)
 
 |ID | Model | mF1B | mF1S | 
+|   -   |   -  |   -  |   -   | 
 | 1 | MS-TCN | 68.68<sub>±0.6</sub> |47.71<sub>±0.8</sub> |
 | 2 | Transformer Encoder | 60.12<sub>±0.5</sub> |42.7<sub>±1.0</sub> |
 | 3 | ASFormer | 69.60<sub>±0.5</sub> |48.34<sub>±0.8</sub> |
