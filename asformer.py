@@ -334,8 +334,8 @@ class MyTransformer(nn.Module):
 ################ Trainer ####################
 
 class ASFormerTrainer:
-    def __init__(self, num_layers, r1, r2, num_f_maps, input_dim, num_classes, channel_masking_rate, weights, save_dir):
-        self.model = MyTransformer(3, num_layers, r1, r2, num_f_maps, input_dim, num_classes, channel_masking_rate)
+    def __init__(self, num_layers, r1, r2, num_f_maps, input_dim, num_classes, channel_masking_rate, weights, save_dir, num_decoders = 7):
+        self.model = MyTransformer(num_decoders, num_layers, r1, r2, num_f_maps, input_dim, num_classes, channel_masking_rate)
         ## To add : weigths !!
         if weights is None:
             self.ce = nn.CrossEntropyLoss(ignore_index=-100)
