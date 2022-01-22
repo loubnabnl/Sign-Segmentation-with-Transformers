@@ -334,7 +334,7 @@ class MyTransformer(nn.Module):
 ################ Trainer ####################
 
 class ASFormerTrainer:
-    def __init__(self, num_layers, r1, r2, num_f_maps, input_dim, num_classes, channel_masking_rate, weights, save_dir, num_decoders = 7):
+    def __init__(self, num_decoders, num_layers, r1, r2, num_f_maps, input_dim, num_classes, channel_masking_rate, weights, save_dir):
         self.model = MyTransformer(num_decoders, num_layers, r1, r2, num_f_maps, input_dim, num_classes, channel_masking_rate)
         ## To add : weigths !!
         if weights is None:
@@ -352,7 +352,7 @@ class ASFormerTrainer:
         self.mean_f1b_test = 0 
 
 
-    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, batch_gen_tst=None):
+    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, eval_args):
         self.model.train()
         self.model.to(device)
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=1e-5)
@@ -450,7 +450,7 @@ class ASFormerTrainer:
                 break
           
 
-    def test(self, args, model_dir, results_dir, features_dict, gt_dict, gt_dict_dil, vid_list_file, epoch, device, mode, classification_threshold, uniform=0, save_pslabels=False, CP_dict=None):
+    def test(self, args, model_dir, results_dir, features_dict, gt_dict, gt_dict_dil, vid_list_file, epoch, device, mode, CP_dict=None):
         
         save_score_dict = {}
         metrics_per_signer = {}
