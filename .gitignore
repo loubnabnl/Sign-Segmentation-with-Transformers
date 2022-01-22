@@ -4,6 +4,7 @@
 *.pkl
 *.model
 *.tar
+*.mat
 run/
 __pycache__/
 *.py[cod]
