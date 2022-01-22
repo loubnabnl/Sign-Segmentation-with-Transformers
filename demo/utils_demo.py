@@ -172,7 +172,7 @@ def generate_vtt_file(all_preds, logits, save_path):
 
     # load i3d classes
     i3d_scores = logits
-    with open('data/info/bslcp/info.pkl', 'rb') as f:
+    with open('../data/info/bslcp/info.pkl', 'rb') as f:
         info_data = pickle.load(f)
 
     # for start, end in zip(starts, ends):

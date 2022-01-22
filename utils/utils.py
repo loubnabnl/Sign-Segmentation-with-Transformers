@@ -168,7 +168,6 @@ def create_folders(args, model_type = 'asformer'):
         num_layers = args.num_layers
         num_f_maps = args.num_f_maps
         features_dim = args.features_dim
-
     bz = args.bz
     lr = args.lr
     num_epochs = args.num_epochs

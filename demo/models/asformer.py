@@ -1,10 +1,3 @@
-import time
-import pickle
-import json
-from math import ceil
-from pathlib import Path
-import datetime
-from tqdm import tqdm
 import copy
 import numpy as np
 import math
@@ -12,16 +5,6 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch import optim
-from torch.utils.tensorboard import SummaryWriter
-
-
-from utils import Bar
-from utils.viz import viz_results_paper
-from utils.averagemeter import AverageMeter
-from utils.utils import torch_to_list
-from eval import Metric
-
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

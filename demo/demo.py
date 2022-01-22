@@ -125,7 +125,7 @@ def load_i3d_model(
 def load_asformer_model(
         asformer_checkpoint_path: Path,
         device,
-        num_encoders: int = 3,
+        num_decoders: int = 3,
         num_layers: int = 9,
         r1: int = 2,
         r2: int = 2, 
@@ -139,7 +139,7 @@ def load_asformer_model(
     #model = models.MultiStageModel(
     #)
     model = models.asformer.MyTransformer(
-        num_encoders,
+        num_decoders,
         num_layers,
         r1, r2, 
         num_f_maps, 
@@ -326,11 +326,11 @@ def main_asformer(
 class Demo_args():
     def __init__(self, *args, **kwargs):
       self.starting_point="video"
-      self.i3d_checkpoint_path = "model/i3d/i3d_kinetics_bslcp.pth.tar"
-      self.asformer_checkpoint_path="model/asformer/asformer_bslcp.model"
-      self.video_path="demo/sample_data/demo_video.mp4"
+      self.i3d_checkpoint_path = "../models/i3d/i3d_kinetics_bslcp.pth.tar"
+      self.asformer_checkpoint_path="../models/asformer/asformer_bslcp.model"
+      self.video_path="sample_data/demo_video.mp4"
       self.feature_path="data/features/bslcp/i3d_kinetics_bslcp_981/train/features.mat"
-      self.save_path="demo/results"
+      self.save_path="results"
       self.num_in_frames=16
       self.stride=1
       self.batch_size=1
@@ -346,5 +346,6 @@ if __name__ == "__main__":
     dem_args = Demo_args()
     #extract video I3D features
     features, logits = main_i3d(**vars(dem_args))
+    print('ok')
     #make predictions and create visualization
     main_asformer(features, logits,**vars(dem_args))

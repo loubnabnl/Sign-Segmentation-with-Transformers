@@ -17,7 +17,7 @@ In this project, we reproduced the results obtained on the following paper (by u
 - [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/) and [Gül Varol](https://www.robots.ox.ac.uk/~gul),
 *Sign language segmentation with temporal convolutional networks*, ICASSP 2021.  [[arXiv]](https://arxiv.org/abs/2011.12986)
 
-We used the pre-extracted frame-level features obtained by applying the I3D model on videos to retrain the MS-TCN architecture for frame-level binary classification and reproduce the papers results. The `tets [302MB]` folder proposes a notebook for reproducing the original paper results, with a meanF1B = 68.68.
+We used the pre-extracted frame-level features obtained by applying the I3D model on videos to retrain the MS-TCN architecture for frame-level binary classification and reproduce the papers results. The `test [302MB]` folder proposes a notebook for reproducing the original paper results, with a meanF1B = 68.68 on the evaluation set of the BSL Corpus. 
 
 We further implemented new models in order to improve this result. We wanted to try attention based models as they have received recently a huge gain of interest in the vision research community. We first tried to train a Vanilla Transformer Encoder from scratch, but the results were not satisfactory. 
 
@@ -25,10 +25,10 @@ We further implemented new models in order to improve this result. We wanted to 
 
 We then implemented the ASFormer model (Transformer for Action Segementation), using this [code](https://github.com/ChinaYi/ASFormer) : a hybrid transformer model using some interesting ideas from the MS-TCN architecture. The motivations behind the model and its architecture are detailed in the following paper : 
 
-- [ASFormer: Transformer for Action Segmentation](https://arxiv.org/abs/2110.08568), Fangqiu Yi, Hongyu Wen, Tingting Jiang.
+- [ASFormer: Transformer for Action Segmentation](https://arxiv.org/abs/2110.08568), Fangqiu Yi, Hongyu Wen, Tingting Jiang (2021).
 
 
-We trained this model on our I3D features and obtained an improvement over the MS-TCN architecture. The results are given in the following table : 
+We trained this model on the I3D extracted features and obtained an improvement over the MS-TCN architecture. The results are given in the following table : 
 
 *TODO*
 
@@ -57,7 +57,9 @@ conda activate signseg_env
 
 
 ## Data and models
-You can download our pretrained models (`models.zip [302MB]`) and data (`data.zip [5.5GB]`) used in the experiments [here](https://drive.google.com/drive/folders/17DaatdfD4GRnLJJ0RX5TcSfHGMxMS0Lm?usp=sharing) or by executing `download/download_*.sh`. The unzipped `data/` and `models/` folders should be located on the root directory of the repository (for using the demo downloading the `models` folder is sufficient).
+You can download the pretrained models (I3D and MS-TCN) (`models.zip [302MB]`) and data (`data.zip [5.5GB]`) used in the experiments [here](https://drive.google.com/drive/folders/17DaatdfD4GRnLJJ0RX5TcSfHGMxMS0Lm?usp=sharing) or by executing `download/download_*.sh`. The unzipped `data/` and `models/` folders should be located on the root directory of the repository (for using the demo downloading the `models` folder is sufficient).
+
+You can also download our best pretrained asformer model weights here : TO DO ! 
 
 
 ### Data:
@@ -69,7 +71,8 @@ The authors of [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/s
 ### Models:
 - I3D weights, trained for sign classification: `models/i3d/*.pth.tar`
 - MS-TCN weights for the demo (see tables below for links to the other models): `models/ms-tcn/*.model`
-- TO ADD ASFORMER PRETRAINED
+- As_former weights of our best model : `models/asformer/*.model`
+
 The folder structure should be as below:
 ```
 sign-segmentation/models/
@@ -79,19 +82,26 @@ sign-segmentation/models/
     i3d_kinetics_phoenix_1297.pth.tar
   ms-tcn/
     mstcn_bslcp_i3d_bslcp.model
+  asformer/
+    best_asformer_bslcp.model
 ```
 ## Demo
 The demo folder contains a sample script to estimate the segments of a given sign language video, one can run `demo.py`to get a visualization on a sample video.
 
+```
+cd demo
+python demo.py
+```
+
 The demo will: 
 1. use the `models/i3d/i3d_kinetics_bslcp.pth.tar` pretrained I3D model to extract features,
-2. use the `models/asformer/asformer_model.model` pretrained ASFormer model to predict the segments out of the features,
+2. use the `models/asformer/best_asformer_model.model` pretrained ASFormer model to predict the segments out of the features.
 3. save results.
 
 ## Training
-To train I3D please refer to [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/sign-segmentation). To train ASFormer on the pre-extracted I3D features run `main.py`, you can change hyperparameters in the erguments inside the file. Or you can run the notebook in the folder `test_asformer`.
+To train I3D please refer to [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/sign-segmentation). To train ASFormer on the pre-extracted I3D features run `main.py`, you can change hyperparameters in the arguments inside the file. Or you can run the notebook in the folder `test_asformer`.
 
-* Influence of I3D training (fully-supervised segmentation results on BSL Corpus)
+* Influence of I3D training (fully-supervised segmentation results on BSL Corpus) : 
 
 |ID | Model | mF1B | mF1S | 
 |   -   |   -  |   -  |   -   | 
@@ -109,15 +119,6 @@ If you use this code and data, please cite the original papers following:
     booktitle    = "ICASSP",
     year         = "2021",
 }
-```
-```
-@inproceedings{Renz2021signsegmentation_b,
-    author       = "Katrin Renz and Nicolaj C. Stache and Neil Fox and G{\"u}l Varol and Samuel Albanie",
-    title        = "Sign Segmentation with Changepoint-Modulated Pseudo-Labelling",
-    booktitle    = "CVPRW",
-    year         = "2021",
-}
-```
 ```
 @article{yi2021asformer,
   title={Asformer: Transformer for action segmentation},
