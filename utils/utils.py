@@ -144,7 +144,7 @@ def save_args(args, save_folder, opt_prefix="opt"):
     print(f"Saved options to {opt_path}")
 
 
-def create_folders(args):
+def create_folders(args, model_type = 'asformer'):
     """Creates folder structure to save models/ results.
 
     Args:
@@ -155,11 +155,20 @@ def create_folders(args):
         model_save_dir: Path to the folder where the model is saved
         results_save_dir: Path to the folder where the (inference) results are saved
     """
-    num_layers = args.num_layers,
-    num_decoders = 7 #default
-    r1 = args.r1,
-    r2 = args.r2, 
-    num_f_maps = args.num_f_maps,
+    if model_type == 'asformer' : 
+        num_layers = args.num_layers,
+        num_decoders = args.num_decoders, 
+        num_f_maps = args.num_f_maps,
+    if model_type == 'transformer' : 
+        num_layers = args.num_layers,
+        num_decoders = args.nhead, 
+        num_f_maps = args.nhid,
+    if model_type == 'mstcn' : 
+        num_stages = args.num_stages
+        num_layers = args.num_layers
+        num_f_maps = args.num_f_maps
+        features_dim = args.features_dim
+
     bz = args.bz
     lr = args.lr
     num_epochs = args.num_epochs
@@ -186,7 +195,7 @@ def create_folders(args):
 
     # load pretrained model from given path
     if args.action == 'predict':
-            model_load_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_layers}_{num_layers}_{num_f_maps}_{r1}_{r2}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/epoch-{str(args.extract_epoch)}.model"  #+args.split
+            model_load_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_decoders}_{num_layers}_{num_f_maps}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/epoch-{str(args.extract_epoch)}.model"  #+args.split
     else:
             model_load_dir = ''
 
@@ -212,5 +221,5 @@ def create_folders(args):
         else:
             os.makedirs(results_save_dir)
             save_args(args, results_save_dir)
-            
+        
     return model_load_dir, model_save_dir, results_save_dir
