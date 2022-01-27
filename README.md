@@ -17,7 +17,7 @@ In this project, we reproduced the results obtained on the following paper (by u
 - [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/) and [Gül Varol](https://www.robots.ox.ac.uk/~gul),
 *Sign language segmentation with temporal convolutional networks*, ICASSP 2021.  [[arXiv]](https://arxiv.org/abs/2011.12986)
 
-We used the pre-extracted frame-level features obtained by applying the I3D model on videos to retrain the MS-TCN architecture for frame-level binary classification and reproduce the papers results. The `test [302MB]` folder proposes a notebook for reproducing the original paper results, with a meanF1B = 68.68 on the evaluation set of the BSL Corpus. 
+We used the pre-extracted frame-level features obtained by applying the I3D model on videos to retrain the MS-TCN architecture for frame-level binary classification and reproduce the papers results. The `tests` folder proposes a notebook for reproducing the original paper results, with a meanF1B = 68.68 on the evaluation set of the BSL Corpus. 
 
 We further implemented new models in order to improve this result. We wanted to try attention based models as they have received recently a huge gain of interest in the vision research community. We first tried to train a Vanilla Transformer Encoder from scratch, but the results were not satisfactory. 
 
@@ -30,10 +30,11 @@ We then implemented the ASFormer model (Transformer for Action Segementation), u
 
 We trained this model on the I3D extracted features and obtained an improvement over the MS-TCN architecture. The results are given in the following table : 
 
-*TODO*
-
-![demo](demo/results/demo.gif)
-
+|ID | Model | mF1B | mF1S | 
+|   -   |   -  |   -  |   -   | 
+| 1 | MS-TCN | 68.68<sub>±0.6</sub> |47.71<sub>±0.8</sub> |
+| 2 | Transformer Encoder | 60.28<sub>±0.3</sub> |42.70<sub>±0.2</sub> |
+| 3 | ASFormer | 69.79<sub>±0.2</sub> |49.23<sub>±2.0</sub> |
 
 ## Contents
 * [Setup](#setup)
@@ -59,12 +60,12 @@ conda activate signseg_env
 ## Data and models
 You can download the pretrained models (I3D and MS-TCN) (`models.zip [302MB]`) and data (`data.zip [5.5GB]`) used in the experiments [here](https://drive.google.com/drive/folders/17DaatdfD4GRnLJJ0RX5TcSfHGMxMS0Lm?usp=sharing) or by executing `download/download_*.sh`. The unzipped `data/` and `models/` folders should be located on the root directory of the repository (for using the demo downloading the `models` folder is sufficient).
 
-You can also download our best pretrained asformer model weights here : TO DO ! 
+You can also download our best pretrained ASFormer model weights here : TO DO ! 
 
 
 ### Data:
 Please cite the original datasets when using the data: [BSL Corpus](https://bslcorpusproject.org/cava/acknowledgements-and-citation/) 
-The authors of [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/sign-segmentation) provide the pre-extracted features and metadata. See [here](data/README.md) for a detailed description of the data files. 
+The authors of [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/sign-segmentation) provided the pre-extracted features and metadata. See [here](data/README.md) for a detailed description of the data files. 
 - Features: `data/features/*/*/features.mat`
 - Metadata: `data/info/*/info.pkl`
 
@@ -101,14 +102,6 @@ The demo will:
 ## Training
 To train I3D please refer to [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/sign-segmentation). To train ASFormer on the pre-extracted I3D features run `main.py`, you can change hyperparameters in the arguments inside the file. Or you can run the notebook in the folder `test_asformer`.
 
-* Influence of I3D training (fully-supervised segmentation results on BSL Corpus) : 
-
-|ID | Model | mF1B | mF1S | 
-|   -   |   -  |   -  |   -   | 
-| 1 | MS-TCN | 68.68<sub>±0.6</sub> |47.71<sub>±0.8</sub> |
-| 2 | Transformer Encoder | 60.12<sub>±0.5</sub> |42.7<sub>±1.0</sub> |
-| 3 | ASFormer | 69.60<sub>±0.5</sub> |48.34<sub>±0.8</sub> |
-
 ## Citation
 If you use this code and data, please cite the original papers following:
 
@@ -119,6 +112,7 @@ If you use this code and data, please cite the original papers following:
     booktitle    = "ICASSP",
     year         = "2021",
 }
+```
 ```
 @article{yi2021asformer,
   title={Asformer: Transformer for action segmentation},
