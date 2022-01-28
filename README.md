@@ -12,7 +12,7 @@ In this context, techniques have emerged to perform automatic sign segmentation 
 ![demo](demo/results/demo.gif)
 
 
-## Previous works and personal contribution : 
+## Previous work and personal contribution : 
 
 This repository provides code for the Object Recognition & Computer Vision (RecVis) course Final project. For more details please refer the the project report `report.pdf`.
 In this project, we reproduced the results obtained on the following paper (by using the code from this [ repository](https://github.com/RenzKa/sign-segmentation)) :  
