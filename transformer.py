@@ -15,6 +15,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from utils import Bar
 from utils.viz import viz_results_paper
@@ -59,7 +60,7 @@ class TransformerModel(nn.Module):
         out = self.encoder(src) * math.sqrt(self.nhid) 
         out = self.pos_encoder(out)
         output = self.transformer_encoder(out, src_mask, src_key_padding_mask)
-        return output 
+        return output
 
 class ClassificationHead(nn.Module):
     def __init__(self, nhid, nclasses):
@@ -129,6 +130,7 @@ class LearnedPositionalEmbedding(nn.Module):
     def forward(self, x):
         return self.pe[:, :x.size(1)]
 
+
 class TransfromerTrainer:
     def __init__(self, nhead, nhid, dim_feedforward, num_layers, num_classes, dropout, device, weights, save_dir):
         #self.model = MultiStageModel(num_blocks, num_layers, num_f_maps, dim, num_classes)
@@ -160,10 +162,11 @@ class TransfromerTrainer:
 
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
         #optimizer from Attention is all you need paper
-        # optimizer = ScheduledOptim(
-        #     optim.Adam(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09),
-        #     lr_mul, self.nhid, n_warmup_steps)
-        
+        #optimizer = ScheduledOptim(
+        #    optim.Adam(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09),
+        #    lr_mul, self.nhid, n_warmup_steps)
+        #scheduler = ReduceLROnPlateau(optimizer, 'max', patience=3)
+
         for epoch in range(num_epochs):
             epoch_loss = 0
             end = time.time()
@@ -225,7 +228,8 @@ class TransfromerTrainer:
             get_metrics_train.calc_metrics()
             result_dict = get_metrics_train.save_print_metrics(self.writer, save_dir, epoch, epoch_loss/(len(batch_gen.list_of_examples)/batch_size))
             self.train_result_dict.update(result_dict)
-
+            print(result_dict[epoch]['mF1B'])
+            #scheduler.step(result_dict[epoch]['mF1B'])
             eval_args[7] = epoch
             eval_args[1] = save_dir + "/epoch-" + str(epoch+1) + ".model"
             self.predict(*eval_args)
@@ -272,6 +276,7 @@ class TransfromerTrainer:
                 epoch_loss += loss.item()
 
                 cut_endpoints = True
+                #predicted2 = predicted.squeeze(1)[:,1]
                 if cut_endpoints:
                   if sum(predicted[-2:,:, 1]) > 0 and sum(gt_eval[-4:]) == 0:
                     for j in range(len(predicted[:, :, 1])-1, 0, -1):
@@ -288,6 +293,7 @@ class TransfromerTrainer:
                       elif item == 0 and (j > 2 or check):
                         break
                 
+
                 get_metrics_test.calc_scores_per_batch(predicted[:,:,1].permute(1,0), gt.unsqueeze(0), gt_eval.unsqueeze(0))       
 
                 save_score_dict[vid] = {}
