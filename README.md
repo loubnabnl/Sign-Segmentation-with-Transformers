@@ -60,7 +60,7 @@ conda activate signseg_env
 ## Data and models
 You can download the pretrained models (I3D and MS-TCN) (`models.zip [302MB]`) and data (`data.zip [5.5GB]`) used in the experiments [here](https://drive.google.com/drive/folders/17DaatdfD4GRnLJJ0RX5TcSfHGMxMS0Lm?usp=sharing) or by executing `download/download_*.sh`. The unzipped `data/` and `models/` folders should be located on the root directory of the repository (for using the demo downloading the `models` folder is sufficient).
 
-You can also download our best pretrained ASFormer model weights here : TO DO ! 
+You can download our best pretrained ASFormer model weights [here](https://drive.google.com/file/d/1WZ3PR05BMbj54SAmK-TsZ1YmfuEH6DxT/view?usp=sharing).
 
 
 ### Data:
