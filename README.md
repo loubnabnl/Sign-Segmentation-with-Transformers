@@ -34,7 +34,7 @@ We trained this model on the I3D extracted features and obtained an improvement 
 |   -   |   -  |   -  |   -   | 
 | 1 | MS-TCN | 68.68<sub>±0.6</sub> |47.71<sub>±0.8</sub> |
 | 2 | Transformer Encoder | 60.28<sub>±0.3</sub> |42.70<sub>±0.2</sub> |
-| 3 | ASFormer | 69.79<sub>±0.2</sub> |49.23<sub>±2.0</sub> |
+| 3 | ASFormer | 69.79<sub>±0.2</sub> |49.23<sub>±1.2</sub> |
 
 ## Contents
 * [Setup](#setup)
