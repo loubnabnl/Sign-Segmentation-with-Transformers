@@ -22,8 +22,6 @@ import models
 from utils_demo import torch_to_list, to_torch, im_to_numpy, im_to_torch, resize_generic, color_normalize, save_pred, generate_vtt_file
 from viz_demo import video_results
 
-
-@beartype
 def load_rgb_video(video_path: Path, fps: int) -> torch.Tensor:
     """
     Load frames of a video using cv2.
@@ -35,7 +33,7 @@ def load_rgb_video(video_path: Path, fps: int) -> torch.Tensor:
 
     # cv2 won't be able to change frame rates for all encodings, so we use ffmpeg
     if cap_fps != fps:
-        tmp_video_path = f"{video_path}.tmp.{video_path.suffix}"
+        tmp_video_path = f"{video_path}.tmp.{Path(video_path).suffix}"
         shutil.move(video_path, tmp_video_path)
         cmd = (f"ffmpeg -i {tmp_video_path} -pix_fmt yuv420p "
                f"-filter:v fps=fps={fps} {video_path}")
@@ -46,6 +44,7 @@ def load_rgb_video(video_path: Path, fps: int) -> torch.Tensor:
         cap_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         cap_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         cap_fps = cap.get(cv2.CAP_PROP_FPS)
+        print(cap_fps)
         assert cap_fps == fps, f"ffmpeg failed to produce a video at {fps}"
 
     f = 0
@@ -68,7 +67,6 @@ def load_rgb_video(video_path: Path, fps: int) -> torch.Tensor:
     return rgb
 
 
-@beartype
 def prepare_input(
     rgb: torch.Tensor,
     resize_res: int = 256,
@@ -100,7 +98,6 @@ def prepare_input(
     rgb = color_normalize(rgb, mean, std)
     return rgb
 
-@beartype
 def load_i3d_model(
         i3d_checkpoint_path: Path,
         num_classes: int,
@@ -117,39 +114,46 @@ def load_i3d_model(
         num_in_frames=num_in_frames,
         include_embds=True,
     )
-    model = torch.nn.DataParallel(model).cuda()
-    checkpoint = torch.load(i3d_checkpoint_path)
+    #model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model)
+    #checkpoint = torch.load(i3d_checkpoint_path)
+    checkpoint = torch.load(i3d_checkpoint_path, map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
     return model
 
-@beartype
-def load_mstcn_model(
-        mstcn_checkpoint_path: Path,
+def load_asformer_model(
+        asformer_checkpoint_path: Path,
         device,
-        num_blocks: int = 4,
-        num_layers: int = 10,
-        num_f_maps: int = 64,
-        dim: int = 1024,
-        num_classes: int = 2,
+        num_decoders: int = 3,
+        num_layers: int = 9,
+        r1: int = 2,
+        r2: int = 2, 
+        num_f_maps: int = 64, 
+        input_dim: int = 1024, 
+        num_classes: int = 2, 
+        channel_masking_rate=0.3,
 
 ) -> torch.nn.Module:
-    """Load pre-trained MS-TCN checkpoint, put in eval mode."""
-    model = models.MultiStageModel(
-        num_blocks, 
-        num_layers, 
+    """Load pre-trained ASFormer checkpoint, put in eval mode."""
+    #model = models.MultiStageModel(
+    #)
+    model = models.asformer.MyTransformer(
+        num_decoders,
+        num_layers,
+        r1, r2, 
         num_f_maps, 
-        dim, 
-        num_classes,
-    )
+        input_dim, 
+        num_classes, 
+        channel_masking_rate)
 
     model = model.to(device)
-    checkpoint = torch.load(mstcn_checkpoint_path)
+    #checkpoint = torch.load(asformer_checkpoint_path)
+    checkpoint = torch.load(asformer_checkpoint_path, map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint)
     model.eval()
     return model
 
-@beartype
 def sliding_windows(
         rgb: torch.Tensor,
         num_in_frames: int,
@@ -191,7 +195,7 @@ def sliding_windows(
 def main_i3d(
     starting_point: str,
     i3d_checkpoint_path: Path,
-    mstcn_checkpoint_path: Path,
+    asformer_checkpoint_path: Path,
     video_path: Path,
     feature_path: Path,
     save_path: Path,
@@ -246,12 +250,12 @@ def main_i3d(
     
     return all_features, all_logits
 
-def main_mstcn(
+def main_asformer(
     features,
     logits,
     starting_point: str,
     i3d_checkpoint_path: Path,
-    mstcn_checkpoint_path: Path,
+    asformer_checkpoint_path: Path,
     video_path: Path,
     feature_path: Path,
     save_path: Path,
@@ -268,9 +272,9 @@ def main_mstcn(
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    with BlockTimer("Loading MS-TCN model"):
-        model = load_mstcn_model(
-            mstcn_checkpoint_path=mstcn_checkpoint_path,
+    with BlockTimer("Loading ASFormer model"):
+        model = load_asformer_model(
+            asformer_checkpoint_path=asformer_checkpoint_path,
             device=device
         )
 
@@ -296,11 +300,10 @@ def main_mstcn(
 
         all_preds.extend(torch_to_list(predicted))
         all_probs.extend(pred_prob)
-
     if save_segments:
         print("Save results.")
-        pkl.dump(all_preds, open(save_path/'predictions.pkl', "wb"))
-        pkl.dump(all_probs, open(save_path/'probabilities.pkl', "wb"))
+        pkl.dump(all_preds, open(save_path + '/predictions.pkl', "wb")) 
+        pkl.dump(all_probs, open(save_path + '/probabilities.pkl', "wb"))
 
     if generate_vtt:
         print("Generate .vtt file")
@@ -311,7 +314,7 @@ def main_mstcn(
             print("Please choose 'video' as starting point to generate a visualization.")
         else:
             print("Create visualization.")
-            save_path.mkdir(exist_ok=True, parents=True)
+            Path(save_path).mkdir(exist_ok=True, parents=True)
             video_results(
                 video_path,
                 all_preds,
@@ -319,109 +322,30 @@ def main_mstcn(
                 save_path,
                 slowdown_factor,
             )
-    
-
+            
+class Demo_args():
+    def __init__(self, *args, **kwargs):
+      self.starting_point="video"
+      self.i3d_checkpoint_path = "../models/i3d/i3d_kinetics_bslcp.pth.tar"
+      self.asformer_checkpoint_path="../models/asformer/asformer_bslcp.model"
+      self.video_path="sample_data/demo_video.mp4"
+      self.feature_path="data/features/bslcp/i3d_kinetics_bslcp_981/train/features.mat"
+      self.save_path="results"
+      self.num_in_frames=16
+      self.stride=1
+      self.batch_size=1
+      self.fps=25
+      self.num_classes = 981
+      self.slowdown_factor=6
+      self.save_features = True
+      self.save_segments=True
+      self.viz=True
+      self.generate_vtt=True
+        
 if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="Helper script to run demo.")
-    p.add_argument(
-        "--starting_point",
-        type=str,
-        default="video",
-        choices=["video", "feature"],
-        help="Starting point pre-extracted features or video.",
-    )
-    p.add_argument(
-        "--i3d_checkpoint_path",
-        type=Path,
-        default="models/i3d/i3d_kinetics_bslcp.pth.tar",
-        help="Path to I3D checkpoint.",
-    )
-    p.add_argument(
-        "--mstcn_checkpoint_path",
-        type=Path,
-        default="models/ms-tcn/mstcn_bslcp_i3d_bslcp.model",
-        help="Path to MS-TCN checkpoint.",
-    )
-    p.add_argument(
-        "--video_path",
-        type=Path,
-        default="demo/sample_data/M28c_orgsize.mp4",
-        help="Path to test video.",
-    )
-    p.add_argument(
-        "--feature_path",
-        type=Path,
-        default="data/features/bslcp/i3d_kinetics_bslcp_981/train/features.mat",
-        help="Path to pre-extracted features.",
-    )
-    p.add_argument(
-        "--save_path",
-        type=Path,
-        default="demo/results",
-        help="Path to save results.",
-    )
-    p.add_argument(
-        "--num_in_frames",
-        type=int,
-        default=16,
-        help="Number of frames processed at a time by the model",
-    )
-    p.add_argument(
-        "--stride",
-        type=int,
-        default=1 ,
-        help="Number of frames to stride when sliding window.",
-    )
-    p.add_argument(
-        "--batch_size",
-        type=int,
-        default=1,
-        help="Maximum number of clips to put in each batch",
-    )
-    p.add_argument(
-        "--fps",
-        type=int,
-        default=25,
-        help="The frame rate at which to read the video",
-    )
-    p.add_argument(
-        "--num_classes",
-        type=int,
-        default=981,
-        help="The number of classes predicted by the I3D model",
-    )
-    p.add_argument(
-        "--slowdown_factor",
-        type=int,
-        default=6,
-        help="The factor of how much the video is slowed down for the visualization",
-    )
-    p.add_argument(
-        "--save_features",
-        action='store_true',
-        help="Save I3D features of the video",
-    )
-    p.add_argument(
-        "--save_segments",
-        action='store_true',
-        help="Save frame-wise predictions with probabilities of the segmentation",
-    )
-    p.add_argument(
-        "--viz",
-        action='store_true',
-        help="Create video with results.",
-    )
-    p.add_argument(
-        "--generate_vtt",
-        action='store_true',
-        help="Create .vtt file for VIA annotation tool.",
-    )
-    args = p.parse_args()
-
-    if args.starting_point == "video":
-        features, logits = main_i3d(**vars(p.parse_args()))
-    else:
-        features = loadmat(args.feature_path)['preds']
-        logits = None
-
-    main_mstcn(features, logits, **vars(p.parse_args()))
+    dem_args = Demo_args()
+    #extract video I3D features
+    features, logits = main_i3d(**vars(dem_args))
+    print('ok')
+    #make predictions and create visualization
+    main_asformer(features, logits,**vars(dem_args))

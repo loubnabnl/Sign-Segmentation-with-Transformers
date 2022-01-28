@@ -144,7 +144,7 @@ def save_args(args, save_folder, opt_prefix="opt"):
     print(f"Saved options to {opt_path}")
 
 
-def create_folders(args):
+def create_folders(args, model_type = 'asformer'):
     """Creates folder structure to save models/ results.
 
     Args:
@@ -155,10 +155,19 @@ def create_folders(args):
         model_save_dir: Path to the folder where the model is saved
         results_save_dir: Path to the folder where the (inference) results are saved
     """
-    num_stages = args.num_stages
-    num_layers = args.num_layers
-    num_f_maps = args.num_f_maps
-    features_dim = args.features_dim
+    if model_type == 'asformer' : 
+        num_layers = args.num_layers,
+        num_decoders = args.num_decoders, 
+        num_f_maps = args.num_f_maps,
+    if model_type == 'transformer' : 
+        num_layers = args.num_layers,
+        num_decoders = args.nhead, 
+        num_f_maps = args.nhid,
+    if model_type == 'mstcn' : 
+        num_stages = args.num_stages
+        num_layers = args.num_layers
+        num_f_maps = args.num_f_maps
+        features_dim = args.features_dim
     bz = args.bz
     lr = args.lr
     num_epochs = args.num_epochs
@@ -167,10 +176,7 @@ def create_folders(args):
 
     # create folder for save model and results
     std_str = ''
-    if args.regression:
-        train_type=f'regression/std_{args.std}'
-    else:
-        train_type='classification'
+    train_type='classification'
 
     if args.weights == None:
         weighted_str = 'unweighted'
@@ -185,29 +191,16 @@ def create_folders(args):
         norm_str = ''
 
     ssl_str = 'supervised'
-    if args.use_pseudo_labels:
-        if train_data == 'phoenix14':
-            ssl_str = f"pseudo_labels/{args.pseudo_label_type}/train1_test{args.use_test}"
-        elif train_data == 'bsl1k':
-            ssl_str = f"pseudo_labels/{args.pseudo_label_type}/n_episodes{args.bsl1k_train_subset}_test{args.use_test}"
-    else:
-        ssl_str = 'supervised'
 
     # load pretrained model from given path
-    if args.pretrained:
-        model_load_dir = args.pretrained
+    if args.action == 'predict':
+            model_load_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_decoders}_{num_layers}_{num_f_maps}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/epoch-{str(args.extract_epoch)}.model"  #+args.split
     else:
-        if args.action == 'predict':
-            model_load_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_stages}_{num_layers}_{num_f_maps}_{features_dim}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/epoch-{str(args.extract_epoch)}.model"  #+args.split
-        else:
             model_load_dir = ''
-    if not os.path.exists(model_load_dir) and ((args.pretrained and args.action == 'train') or args.action == 'predict'):
-        print(f'Pre-trained model not existing at: {model_load_dir}')
-        sys.exit()
 
-    model_save_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_stages}_{num_layers}_{num_f_maps}_{features_dim}_{bz}_{lr}_{weighted_str}/seed_{args.seed}"
-    if model_load_dir == '' or args.uniform:
-        results_save_dir = f"./exps/{args.folder}/results/{train_type}/traindata_{train_data}/testdata_{test_data}/{args.i3d_training}/{ssl_str}/{num_stages}_{num_layers}_{num_f_maps}_{features_dim}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/th_{args.classification_threshold}"
+    model_save_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_decoders}_{num_layers}_{num_f_maps}_{bz}_{lr}_{weighted_str}/seed_{args.seed}"
+    if model_load_dir == '' :
+        results_save_dir = f"./exps/{args.folder}/results/{train_type}/traindata_{train_data}/testdata_{test_data}/{args.i3d_training}/{ssl_str}/{num_decoders}_{num_layers}_{num_f_maps}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/th_{args.classification_threshold}"
     else:
         results_save_dir = model_save_dir.replace('models', 'results').replace(f'traindata_{train_data}', f'traindata_{train_data}/testdata_{test_data}')
         results_save_dir = f'{results_save_dir}/th_{args.classification_threshold}'
@@ -227,5 +220,5 @@ def create_folders(args):
         else:
             os.makedirs(results_save_dir)
             save_args(args, results_save_dir)
-            
+        
     return model_load_dir, model_save_dir, results_save_dir

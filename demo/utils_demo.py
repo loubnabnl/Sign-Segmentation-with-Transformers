@@ -10,13 +10,14 @@ from math import floor
 import datetime
 from webvtt import WebVTT, Caption
 from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
 
 def torch_to_list(torch_tensor):
     return torch_tensor.cpu().numpy().tolist()
 
 def save_pred(preds, checkpoint="checkpoint", filename="preds_valid.mat"):
     preds = to_numpy(preds)
-    checkpoint.mkdir(exist_ok=True, parents=True)
+    Path(checkpoint).mkdir(exist_ok=True, parents=True)
     filepath = os.path.join(checkpoint, filename)
     mdict = {"preds": preds}
     print(f"Saving to {filepath}")
@@ -171,7 +172,7 @@ def generate_vtt_file(all_preds, logits, save_path):
 
     # load i3d classes
     i3d_scores = logits
-    with open('data/info/bslcp/info.pkl', 'rb') as f:
+    with open('../data/info/bslcp/info.pkl', 'rb') as f:
         info_data = pickle.load(f)
 
     # for start, end in zip(starts, ends):

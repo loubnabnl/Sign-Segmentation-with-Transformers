@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import seaborn as sns
+from pathlib import Path
 
 def video_results(video_path, pred, pred_prob, save_path, slowdown_factor, num_in_frames=16):
     
@@ -18,7 +19,7 @@ def video_results(video_path, pred, pred_prob, save_path, slowdown_factor, num_i
 
     palette = [(0.9,0.9,0.9), sns.color_palette("colorblind", 10)[0]]   # deep, muted, pastel, bright, dark, colorblind
     palette2 = [(0.9,0.9,0.9), sns.color_palette("pastel", 10)[0]]
-    save_path_video = f'{save_path}/{video_path.stem}_result.mp4'
+    save_path_video = f'{save_path}/{Path(video_path).stem}_result.mp4'
 
     cap = cv2.VideoCapture(str(video_path))
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))   # float

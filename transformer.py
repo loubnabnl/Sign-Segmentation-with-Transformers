@@ -62,7 +62,6 @@ class TransformerModel(nn.Module):
         output = self.transformer_encoder(out, src_mask, src_key_padding_mask)
         return output
 
-
 class ClassificationHead(nn.Module):
     def __init__(self, nhid, nclasses):
         super(ClassificationHead, self).__init__()
@@ -88,7 +87,8 @@ class TransformerClassifier(nn.Module):
         ''' src_mask: for attention to mask future values
         src_key_padding_mask: for attention to mask padding values, size=(bz, sequence_len), zeros are conserverd
         and ones are masked
-        padding_mask: original padding mask size=(sequence_len, bz, num_classes), only indexes zeros are masked in         the output'''
+        padding_mask: original padding mask size=(sequence_len, bz, num_classes), only indexes zeros are masked in         
+        the output'''
 
         # base model
         x = self.base(src, src_mask, src_key_padding_mask)
@@ -218,7 +218,6 @@ class TransfromerTrainer:
                 count += 1
                 bar.next()
 
-                #print('batch ok !')
                 if count % 50 == 0:
                     print(bar.suffix)
             print('epoch ok')
@@ -252,7 +251,7 @@ class TransfromerTrainer:
             
             if CP_dict is None:
                 self.model.to(device)
-                #self.model.load_state_dict(torch.load(model_dir))
+                self.model.load_state_dict(torch.load(model_dir))
 
             epoch_loss = 0
             for vid in tqdm(vid_list_file):
@@ -280,7 +279,6 @@ class TransfromerTrainer:
                 #predicted2 = predicted.squeeze(1)[:,1]
                 if cut_endpoints:
                   if sum(predicted[-2:,:, 1]) > 0 and sum(gt_eval[-4:]) == 0:
-                    ## !! should we put predicted[-2:,:,0] or predicted[-2,:,:1] !! 
                     for j in range(len(predicted[:, :, 1])-1, 0, -1):
                         if predicted[j, :, 1] != 0:
                             predicted[j, : , 1] = 0
@@ -295,7 +293,8 @@ class TransfromerTrainer:
                       elif item == 0 and (j > 2 or check):
                         break
                 
-                get_metrics_test.calc_scores_per_batch(predicted[:,:,1].permute(1,0), gt.unsqueeze(0), gt_eval.unsqueeze(0))       ## !! predicted[:,:,0] ou predicted[:,:,1]
+
+                get_metrics_test.calc_scores_per_batch(predicted[:,:,1].permute(1,0), gt.unsqueeze(0), gt_eval.unsqueeze(0))       
 
                 save_score_dict[vid] = {}
                 save_score_dict[vid]['scores'] = np.asarray(pred_prob) ## check this 
