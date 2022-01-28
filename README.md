@@ -9,6 +9,9 @@ Sign language automatic indexing is an important challenge to develop better com
 
 In this context, techniques have emerged to perform automatic sign segmentation in videos, by marking the boundaries between individual signs in sign language videos. The developpment of such tools offers the potential to alleviate the limited supply of labelled dataset currently available for sign research. 
 
+![demo](demo/results/demo.gif)
+
+
 ## Previous works and personal contribution : 
 
 This repository provides code for the Object Recognition & Computer Vision (RecVis) course Final project. For more details please refer the the project report `report.pdf`.
