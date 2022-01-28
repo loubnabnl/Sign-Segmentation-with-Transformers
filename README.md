@@ -52,8 +52,8 @@ We trained this model on the I3D extracted features and obtained an improvement 
 
 ``` bash
 # Clone this repository
-git clone https://github.com/kamilakesbi/MVARecVisProject.git
-cd MVARecVisProject/
+git clone https://github.com/loubnabnl/Sign-Segmentation-with-Transformers.git
+cd Sign-Segmentation-with-Transformers/
 # Create signseg_env environment
 conda env create -f environment.yml
 conda activate signseg_env
@@ -81,9 +81,7 @@ The folder structure should be as below:
 ```
 sign-segmentation/models/
   i3d/
-    i3d_kinetics_bsl1k_bslcp.pth.tar
     i3d_kinetics_bslcp.pth.tar
-    i3d_kinetics_phoenix_1297.pth.tar
   ms-tcn/
     mstcn_bslcp_i3d_bslcp.model
   asformer/
