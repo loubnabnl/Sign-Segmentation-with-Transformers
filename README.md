@@ -1,6 +1,6 @@
-# MVA RecVis course final project : 
+# Detecting Temporal Boundaries in Sign Language videos (MVA RecVis project)
 
-## Goal of the project : Detecting Temporal Boundaries in Sign Language videos. 
+## Motivations 
 
 Sign language automatic indexing is an important challenge to develop better communication tools for the deaf community. However, annotated datasets for sign langage are limited, and there are few people with skills to anotate such data, which makes it hard to train performant machine learning models. An important challenge is therefore to : 
 
@@ -12,10 +12,10 @@ In this context, techniques have emerged to perform automatic sign segmentation 
 ![demo](demo/results/demo.gif)
 
 
-## Previous work and personal contribution : 
+## Previous work and personal contribution 
 
 This repository provides code for the Object Recognition & Computer Vision (RecVis) course Final project. For more details please refer the the project report `report.pdf`.
-In this project, we reproduced the results obtained on the following paper (by using the code from this [ repository](https://github.com/RenzKa/sign-segmentation)) :  
+In this project, we first reproduced the results obtained on the following paper (by using the code from this [ repository](https://github.com/RenzKa/sign-segmentation)) :  
 
 - [Katrin Renz](https://www.katrinrenz.de), [Nicolaj C. Stache](https://www.hs-heilbronn.de/nicolaj.stache), [Samuel Albanie](https://www.robots.ox.ac.uk/~albanie/) and [Gül Varol](https://www.robots.ox.ac.uk/~gul),
 *Sign language segmentation with temporal convolutional networks*, ICASSP 2021.  [[arXiv]](https://arxiv.org/abs/2011.12986)
@@ -66,13 +66,13 @@ You can download the pretrained models (I3D and MS-TCN) (`models.zip [302MB]`) a
 You can download our best pretrained ASFormer model weights [here](https://drive.google.com/file/d/1WZ3PR05BMbj54SAmK-TsZ1YmfuEH6DxT/view?usp=sharing).
 
 
-### Data:
+### Data
 Please cite the original datasets when using the data: [BSL Corpus](https://bslcorpusproject.org/cava/acknowledgements-and-citation/) 
 The authors of [github.com/RenzKa/sign-segmentation](https://github.com/RenzKa/sign-segmentation) provided the pre-extracted features and metadata. See [here](data/README.md) for a detailed description of the data files. 
 - Features: `data/features/*/*/features.mat`
 - Metadata: `data/info/*/info.pkl`
 
-### Models:
+### Models
 - I3D weights, trained for sign classification: `models/i3d/*.pth.tar`
 - MS-TCN weights for the demo (see tables below for links to the other models): `models/ms-tcn/*.model`
 - As_former weights of our best model : `models/asformer/*.model`
